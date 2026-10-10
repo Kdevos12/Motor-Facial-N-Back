@@ -21,15 +21,17 @@ CALIBRATION_FILE = Path(__file__).resolve().parent / "data" / "calibration.json"
 MAX_THRESHOLD = 0.75
 
 
-def calibrate(items: list, n_neg: int = 10, seed: int = 0, progress=None) -> dict[str, dict]:
+def calibrate(items: list, n_neg: int = 10, seed: int = 0, progress=None, pool: list | None = None) -> dict[str, dict]:
+    """Thresholds for ``items``; near-miss negatives are drawn from ``pool`` (default: items)."""
     rng = np.random.default_rng(seed)
     by_cat: dict[str, list] = {}
-    for it in items:
+    pool = pool or items
+    for it in pool:
         by_cat.setdefault(it.category, []).append(it)
     out = {}
     for k, it in enumerate(items):
-        pool = [o for o in by_cat[it.category] if o.id != it.id] or [o for o in items if o.id != it.id]
-        picks = [pool[i] for i in rng.choice(len(pool), min(n_neg, len(pool)), replace=False)]
+        cands = [o for o in by_cat.get(it.category, []) if o.id != it.id] or [o for o in pool if o.id != it.id]
+        picks = [cands[i] for i in rng.choice(len(cands), min(n_neg, len(cands)), replace=False)]
         neg = []
         for o in picks:
             f, t = synth_response(o.frames, rng, style_m=0.03)
@@ -47,11 +49,19 @@ def calibrate(items: list, n_neg: int = 10, seed: int = 0, progress=None) -> dic
     return out
 
 
+def user_calibration_file() -> Path:
+    from ..config import home
+    return home() / "calibration.json"
+
+
 def load_calibration(path: Path | None = None) -> dict[str, dict]:
-    path = path or CALIBRATION_FILE
-    if not path.exists():
-        return {}
-    return json.loads(path.read_text())
+    """Bundled thresholds, overlaid with the user's (imported clips) unless a path is given."""
+    paths = [path] if path else [CALIBRATION_FILE, user_calibration_file()]
+    out: dict[str, dict] = {}
+    for p in paths:
+        if p.exists():
+            out.update(json.loads(p.read_text()))
+    return out
 
 
 def save_calibration(data: dict, path: Path | None = None) -> None:

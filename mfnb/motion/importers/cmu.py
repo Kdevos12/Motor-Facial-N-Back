@@ -15,13 +15,13 @@ from pathlib import Path
 
 import numpy as np
 
-from ..library import FPS, MotionItem, SPACE_LIMITS, compute_metrics
+from ..library import FPS, MotionItem
 from ..skeleton import J, N_JOINTS
 from .bvh import forward_kinematics, parse_bvh
+from .common import face_camera, make_clips, scale_to_standard, segment  # noqa: F401  (re-exported for tests)
 from .pack import DATA_DIR, write_pack
 
 REPO = "https://github.com/adventuring/mocap"
-LEG_LENGTH_M = 0.85
 
 # Canonical joint <- BVH joint (this mirror's naming).
 JOINT_MAP = {
@@ -114,133 +114,16 @@ def to_canonical(pos: dict[str, np.ndarray]) -> np.ndarray:
     out[:, J["nose"]] = eyes - 0.08 * scale_hint * np.array([0, 1, 0]) + 0.05 * scale_hint * fwd
     out[:, J["l_ear"]] = head + lateral * 0.2 * scale_hint + 0.1 * scale_hint * np.array([0, 1, 0])
     out[:, J["r_ear"]] = head - lateral * 0.2 * scale_hint + 0.1 * scale_hint * np.array([0, 1, 0])
-    # metres, standard leg length
-    leg = np.median(np.linalg.norm(out[:, J["l_knee"]] - out[:, J["l_hip"]], axis=-1)
-                    + np.linalg.norm(out[:, J["l_ankle"]] - out[:, J["l_knee"]], axis=-1))
-    return out * (LEG_LENGTH_M / leg)
-
-
-def face_camera(frames: np.ndarray) -> np.ndarray:
-    """Recentre on the first frame's pelvis, rotate so it faces +z, put the feet on the floor."""
-    f = frames.copy()
-    mid = (f[0, J["l_hip"]] + f[0, J["r_hip"]]) / 2
-    f[:, :, 0] -= mid[0]
-    f[:, :, 2] -= mid[2]
-    hip_vec = f[0, J["l_hip"]] - f[0, J["r_hip"]]
-    fwd = np.cross(hip_vec, [0.0, 1.0, 0.0])
-    yaw = np.arctan2(fwd[0], fwd[2])
-    c, s = np.cos(-yaw), np.sin(-yaw)
-    x, z = f[..., 0].copy(), f[..., 2].copy()
-    f[..., 0] = c * x + s * z
-    f[..., 2] = -s * x + c * z
-    f[:, :, 1] -= f[:, [J["l_ankle"], J["r_ankle"], J["l_foot"], J["r_foot"]], 1].min()
-    f[:, :, 1] += 0.02
-    return f
-
-
-def motion_energy(f: np.ndarray) -> np.ndarray:
-    mid = (f[:, J["l_hip"]] + f[:, J["r_hip"]]) / 2
-    rel = f - mid[:, None]
-    v = np.linalg.norm(np.diff(rel, axis=0), axis=-1).sum(-1) * FPS
-    v += np.linalg.norm(np.diff(mid, axis=0), axis=-1) * FPS * 3
-    v = np.concatenate([[v[0]], v])
-    k = max(1, int(0.25 * FPS))
-    return np.convolve(v, np.ones(k) / k, mode="same")
-
-
-def segment(frames: np.ndarray, min_s: float = 1.2, max_s: float = 5.0, window_s: float = 3.5) -> list[tuple[int, int]]:
-    """Cut at rest pauses; long active stretches become fixed windows."""
-    e = motion_energy(frames)
-    active_level = np.percentile(e, 75)
-    rest = e < 0.3 * active_level
-    cuts = [0]
-    i = 0
-    n = len(e)
-    while i < n:
-        if rest[i]:
-            j = i
-            while j < n and rest[j]:
-                j += 1
-            if j - i >= int(0.25 * FPS):
-                cuts.append((i + j) // 2)
-            i = j
-        else:
-            i += 1
-    cuts.append(n - 1)
-    out = []
-    for a, b in zip(cuts[:-1], cuts[1:]):
-        length = (b - a) / FPS
-        if length < min_s:
-            continue
-        if length <= max_s:
-            out.append((a, b))
-        else:
-            w = int(window_s * FPS)
-            for s in range(a, b - int(min_s * FPS), w):
-                out.append((s, min(b, s + w)))
-    return out
-
-
-def estimate_complexity(f: np.ndarray) -> int:
-    e = motion_energy(f)
-    top = e.max()
-    if top <= 0:
-        return 1
-    peaks = [i for i in range(1, len(e) - 1) if e[i] >= e[i - 1] and e[i] > e[i + 1] and e[i] > 0.5 * top]
-    merged = []
-    for p in peaks:
-        if not merged or p - merged[-1] > int(0.35 * FPS):
-            merged.append(p)
-    return int(np.clip(len(merged) + 1, 2, 5))
-
-
-def estimate_flexibility(f: np.ndarray) -> str:
-    angles = []
-    for side in ("l", "r"):
-        thigh = f[:, J[f"{side}_knee"]] - f[:, J[f"{side}_hip"]]
-        cosv = -thigh[:, 1] / np.maximum(np.linalg.norm(thigh, axis=-1), 1e-9)
-        angles.append(np.degrees(np.arccos(np.clip(cosv, -1, 1))))
-    hip_flex = float(np.max(angles))
-    mid_y = ((f[:, J["l_hip"], 1] + f[:, J["r_hip"], 1]) / 2)
-    crouch = float(mid_y.max() - mid_y.min())
-    if hip_flex > 95 or crouch > 0.45:
-        return "high"
-    if hip_flex > 65 or crouch > 0.25:
-        return "medium"
-    return "low"
+    return scale_to_standard(out)
 
 
 def clips_from_bvh(text: str, src: Source, trial: str) -> list[MotionItem]:
     bvh = parse_bvh(text)
     step = max(1, int(round(1.0 / (bvh.frame_time * FPS))))
-    pos = forward_kinematics(bvh, slice(0, None, step))
-    frames = to_canonical(pos)
-    # drop the T-pose calibration lead-in that many CMU takes start with
-    arms_out = np.abs(frames[:, J["l_wrist"], 0] - frames[:, J["r_wrist"], 0]) > 1.3
-    start = int(np.argmax(~arms_out)) if arms_out[:15].all() else 0
-    frames = frames[start:]
-    items = []
-    limit_fp, limit_reach = SPACE_LIMITS["small"]
-    for k, (a, b) in enumerate(segment(frames)):
-        seg = face_camera(frames[a:b + 1]).astype(np.float32)
-        m = compute_metrics(seg)
-        dev = np.linalg.norm(seg - seg[:1], axis=-1).sum(-1)
-        if dev.max() < 1.0:          # nothing happens
-            continue
-        if m["footprint_m"] > limit_fp or m["reach_m"] > limit_reach:
-            continue
-        if not np.isfinite(seg).all():
-            continue
-        items.append(MotionItem(
-            id=f"cmu.{trial}.{k}", name=f"{src.name} (CMU {trial} #{k + 1})", category=src.category,
-            subcategory=src.subcategory, complexity=estimate_complexity(seg), flexibility=estimate_flexibility(seg),
-            static=False, stance_based=False, source="cmu", segments=[f"cmu.{trial}"],
-            description=f"Motion capture: CMU Graphics Lab database, trial {trial}.", tags=["mocap"], frames=seg, **m))
-    # keep the most varied clips of a long take
-    if len(items) > src.max_clips:
-        idx = np.linspace(0, len(items) - 1, src.max_clips).round().astype(int)
-        items = [items[i] for i in sorted(set(idx))]
-    return items
+    frames = to_canonical(forward_kinematics(bvh, slice(0, None, step)))
+    return make_clips(frames, id_prefix=f"cmu.{trial}", name=f"{src.name} (CMU {trial})", category=src.category,
+                      subcategory=src.subcategory, source="cmu",
+                      description=f"Motion capture: CMU Graphics Lab database, trial {trial}.", max_clips=src.max_clips)
 
 
 def fetch_repo(cache: Path, paths: list[str], progress=print) -> Path:
@@ -275,5 +158,5 @@ def import_cmu(args) -> int:
     out = Path(args.out) if args.out else DATA_DIR / "cmu.pack.json.gz"
     write_pack(out, items, source="CMU Graphics Lab Motion Capture Database (mocap.cs.cmu.edu), BVH via "
                "github.com/adventuring/mocap", licence="CMU: free to use, may not be resold; mirror: MIT")
-    print(f"Wrote {len(items)} clips to {out}. Run `mfnb calibrate` to refresh the acceptance thresholds.")
+    print(f"Wrote {len(items)} clips to {out}. Run `mfnb calibrate --bundled` to refresh the acceptance thresholds.")
     return 0

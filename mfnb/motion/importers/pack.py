@@ -44,9 +44,21 @@ def read_pack(path: Path) -> list:
     return out
 
 
-def load_packs(directory: Path | None = None) -> list:
-    directory = directory or DATA_DIR
-    items = []
-    for p in sorted(directory.glob("*.pack.json.gz")):
-        items += read_pack(p)
+def user_pack_dir() -> Path:
+    from ...config import home
+    d = home() / "packs"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def load_packs(directory: Path | None = None, include_user: bool = True) -> list:
+    """Bundled packs, plus the user's own imports (~/.mfnb/packs) unless a directory is given."""
+    dirs = [directory] if directory else [DATA_DIR] + ([user_pack_dir()] if include_user else [])
+    items, seen = [], set()
+    for d in dirs:
+        for p in sorted(d.glob("*.pack.json.gz")):
+            for it in read_pack(p):
+                if it.id not in seen:
+                    seen.add(it.id)
+                    items.append(it)
     return items

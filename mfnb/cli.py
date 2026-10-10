@@ -47,13 +47,44 @@ def cmd_library(_args) -> int:
     return 0
 
 
-def cmd_calibrate(_args) -> int:
-    from .motion.calibration import calibrate, save_calibration
+def cmd_calibrate(args) -> int:
+    from .motion.calibration import CALIBRATION_FILE, calibrate, save_calibration, user_calibration_file
     from .motion.library import get_library
     lib = get_library()
-    data = calibrate(list(lib.items.values()), progress=lambda k, n: print(f"  {k}/{n}"))
-    save_calibration(data)
-    print(f"Calibrated {len(data)} items.")
+    items = [i for i in lib.items.values() if args.bundled or i.source not in ("procedural", "cmu")]
+    if not items:
+        print("Nothing to calibrate: bundled moves are already calibrated (use --bundled to redo them).")
+        return 0
+    data = calibrate(items, progress=lambda k, n: print(f"  {k}/{n}"), pool=list(lib.items.values()))
+    path = CALIBRATION_FILE if args.bundled else user_calibration_file()
+    save_calibration(data, path)
+    print(f"Calibrated {len(data)} items -> {path}")
+    return 0
+
+
+def cmd_import_dataset(args) -> int:
+    from .motion.importers.datasets import RECIPES, import_dataset
+    r = RECIPES[args.name]
+    print(f"Importing {r.title} (licence: {r.licence}) for personal use...")
+    import_dataset(args.name, config.home() / "cache")
+    print("Run `mfnb calibrate` to compute acceptance thresholds for the new clips, then restart the app.")
+    return 0
+
+
+def cmd_import_bvh(args) -> int:
+    from pathlib import Path
+
+    from .motion.importers.datasets import import_files
+    from .motion.importers.pack import user_pack_dir
+    files = []
+    for f in args.files:
+        p = Path(f)
+        files += sorted(p.glob("**/*.bvh")) if p.is_dir() else [p]
+    def classify(path):
+        return args.category, args.subcategory or "imported", f"{args.name or path.stem}", args.max_clips
+    out = user_pack_dir() / f"{args.pack}.pack.json.gz"
+    import_files(files, classify, args.pack, args.licence, args.pack, out)
+    print("Run `mfnb calibrate`, then restart the app.")
     return 0
 
 
@@ -74,14 +105,26 @@ def main(argv: list[str] | None = None) -> int:
         target.add_argument("--offline", action="store_true", help="do not try to download assets")
     sub.add_parser("fetch-assets", help="download MediaPipe JS/WASM and models")
     sub.add_parser("library", help="print library statistics")
-    sub.add_parser("calibrate", help="recompute per-move acceptance thresholds")
+    cal = sub.add_parser("calibrate", help="compute per-move acceptance thresholds for imported clips")
+    cal.add_argument("--bundled", action="store_true", help="recompute the bundled library's thresholds (developers)")
+    ds = sub.add_parser("import-dataset", help="import a large open mocap dataset locally (personal use)")
+    ds.add_argument("name", choices=["bandai", "lafan1"])
+    ib = sub.add_parser("import-bvh", help="import your own BVH files (any common rig)")
+    ib.add_argument("files", nargs="+", help="BVH files or folders")
+    ib.add_argument("--category", required=True, help="library category, e.g. 'dance' or 'kicks'")
+    ib.add_argument("--subcategory", default=None)
+    ib.add_argument("--name", default=None, help="display name (default: file name)")
+    ib.add_argument("--pack", default="my-moves", help="pack name in ~/.mfnb/packs")
+    ib.add_argument("--licence", default="own recording")
+    ib.add_argument("--max-clips", type=int, default=12)
     c = sub.add_parser("import-cmu", help="import clips from the CMU motion capture database (BVH)")
     c.add_argument("--source", help="folder with CMU BVH files (default: download the curated subjects)")
     c.add_argument("--subjects", help="comma-separated subject numbers (default: curated list)")
     c.add_argument("--out", help="pack file to write (default: bundled pack)")
     args = p.parse_args(argv)
     handlers = {None: cmd_serve, "serve": cmd_serve, "fetch-assets": cmd_fetch_assets, "library": cmd_library,
-                "calibrate": cmd_calibrate, "import-cmu": cmd_import_cmu}
+                "calibrate": cmd_calibrate, "import-cmu": cmd_import_cmu, "import-dataset": cmd_import_dataset,
+                "import-bvh": cmd_import_bvh}
     return handlers[args.cmd](args)
 
 

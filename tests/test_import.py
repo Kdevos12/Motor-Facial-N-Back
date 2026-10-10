@@ -100,3 +100,152 @@ def test_bundled_pack_loads():
     assert {i.source for i in items} == {"cmu"}
     assert all(i.frames.shape[1:] == (19, 3) for i in items)
     assert {"tai chi & qigong", "boxing", "kicks", "karate", "dance"} <= {i.category for i in items}
+
+
+MIXAMO = """HIERARCHY
+ROOT mixamorig:Hips
+{
+  OFFSET 0 100 0
+  CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+  JOINT mixamorig:Spine
+  {
+    OFFSET 0 10 0
+    CHANNELS 3 Zrotation Xrotation Yrotation
+    JOINT mixamorig:Neck
+    {
+      OFFSET 0 40 0
+      CHANNELS 3 Zrotation Xrotation Yrotation
+      JOINT mixamorig:Head
+      {
+        OFFSET 0 10 2
+        CHANNELS 3 Zrotation Xrotation Yrotation
+        End Site
+        {
+          OFFSET 0 18 0
+        }
+      }
+    }
+    JOINT mixamorig:LeftShoulder
+    {
+      OFFSET 5 38 0
+      CHANNELS 3 Zrotation Xrotation Yrotation
+      JOINT mixamorig:LeftArm
+      {
+        OFFSET 12 0 0
+        CHANNELS 3 Zrotation Xrotation Yrotation
+        JOINT mixamorig:LeftForeArm
+        {
+          OFFSET 28 0 0
+          CHANNELS 3 Zrotation Xrotation Yrotation
+          JOINT mixamorig:LeftHand
+          {
+            OFFSET 25 0 0
+            CHANNELS 3 Zrotation Xrotation Yrotation
+            End Site
+            {
+              OFFSET 15 0 0
+            }
+          }
+        }
+      }
+    }
+    JOINT mixamorig:RightShoulder
+    {
+      OFFSET -5 38 0
+      CHANNELS 3 Zrotation Xrotation Yrotation
+      JOINT mixamorig:RightArm
+      {
+        OFFSET -12 0 0
+        CHANNELS 3 Zrotation Xrotation Yrotation
+        JOINT mixamorig:RightForeArm
+        {
+          OFFSET -28 0 0
+          CHANNELS 3 Zrotation Xrotation Yrotation
+          JOINT mixamorig:RightHand
+          {
+            OFFSET -25 0 0
+            CHANNELS 3 Zrotation Xrotation Yrotation
+            End Site
+            {
+              OFFSET -15 0 0
+            }
+          }
+        }
+      }
+    }
+  }
+  JOINT mixamorig:LeftUpLeg
+  {
+    OFFSET 9 -5 0
+    CHANNELS 3 Zrotation Xrotation Yrotation
+    JOINT mixamorig:LeftLeg
+    {
+      OFFSET 0 -45 0
+      CHANNELS 3 Zrotation Xrotation Yrotation
+      JOINT mixamorig:LeftFoot
+      {
+        OFFSET 0 -42 0
+        CHANNELS 3 Zrotation Xrotation Yrotation
+        JOINT mixamorig:LeftToeBase
+        {
+          OFFSET 0 -6 12
+          CHANNELS 3 Zrotation Xrotation Yrotation
+          End Site
+          {
+            OFFSET 0 0 5
+          }
+        }
+      }
+    }
+  }
+  JOINT mixamorig:RightUpLeg
+  {
+    OFFSET -9 -5 0
+    CHANNELS 3 Zrotation Xrotation Yrotation
+    JOINT mixamorig:RightLeg
+    {
+      OFFSET 0 -45 0
+      CHANNELS 3 Zrotation Xrotation Yrotation
+      JOINT mixamorig:RightFoot
+      {
+        OFFSET 0 -42 0
+        CHANNELS 3 Zrotation Xrotation Yrotation
+        JOINT mixamorig:RightToeBase
+        {
+          OFFSET 0 -6 12
+          CHANNELS 3 Zrotation Xrotation Yrotation
+          End Site
+          {
+            OFFSET 0 0 5
+          }
+        }
+      }
+    }
+  }
+}
+MOTION
+Frames: 1
+Frame Time: 0.0333333
+""" + " ".join(["0"] * 63) + "\n"
+
+
+@pytest.mark.parametrize("name,expected", [
+    ("LeftUpLeg", ("l", "upleg")), ("mixamorig:RightForeArm", ("r", "forearm")), ("lShldr", ("l", "shldr")),
+    ("UpperArm_L", ("l", "upperarm")), ("Hand_R", ("r", "hand")), ("Hips", (None, "hips")), ("Toes_L", ("l", "toes")),
+])
+def test_split_side(name, expected):
+    from mfnb.motion.importers.generic import split_side
+    assert split_side(name) == expected
+
+
+def test_generic_import_of_a_mixamo_rig():
+    from mfnb.motion.importers.generic import auto_map, bvh_to_frames
+    m = auto_map(parse_bvh(MIXAMO))
+    assert m["l_shoulder"] == "mixamorig:LeftArm"      # not the clavicle
+    assert m["r_knee"] == "mixamorig:RightLeg" and m["l_hip"] == "mixamorig:LeftUpLeg"
+    assert m["l_foot"] == "mixamorig:LeftToeBase_end" and m["head_top"] == "mixamorig:Head_end"
+    f = bvh_to_frames(MIXAMO)
+    assert f.shape == (1, 19, 3)
+    assert f[0, J["l_hip"], 0] > f[0, J["r_hip"], 0]        # subject's left = +x
+    assert f[0, J["nose"], 2] > f[0, J["l_ear"], 2]           # faces +z
+    assert f[0, J["nose"], 1] > f[0, J["l_shoulder"], 1] > f[0, J["l_knee"], 1]
