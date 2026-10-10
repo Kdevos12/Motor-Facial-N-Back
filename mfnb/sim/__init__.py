@@ -38,3 +38,17 @@ def synth_response(target: np.ndarray, rng: np.random.Generator, *, fps: float =
         frames = frames + offset + drift - drift.mean(0)
     times = np.arange(len(frames)) / fps
     return frames, times
+
+
+def synth_face_response(target: np.ndarray, rng: np.random.Generator, *, fps: float = 30.0, gain_spread: float = 0.25,
+                        noise: float = 0.04, idle_before: float = 1.0, hold: float = 1.2,
+                        idle_after: float = 1.0, crosstalk: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
+    """A person producing a facial expression: neutral, ramp, hold, release (raw 51-dim shapes)."""
+    t = np.asarray(target, dtype=float)
+    gains = np.clip(rng.normal(1.0, gain_spread, t.shape), 0.4, 1.4)
+    peak = np.clip(t * gains + np.abs(rng.normal(0, crosstalk, t.shape)), 0, 1)
+    ramp = int(0.3 * fps)
+    env = np.concatenate([np.zeros(int(idle_before * fps)), np.linspace(0, 1, ramp), np.ones(int(hold * fps)),
+                          np.linspace(1, 0, ramp), np.zeros(int(idle_after * fps))])
+    frames = np.clip(env[:, None] * peak[None, :] + np.abs(rng.normal(0, noise, (len(env), len(t)))), 0, 1)
+    return frames, np.arange(len(env)) / fps
