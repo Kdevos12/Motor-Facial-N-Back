@@ -144,19 +144,38 @@ Converted clips ship in the repo as a compact pack; the importer is a CLI for ad
 
 ## 5. Scoring
 
-**Motor** (server, numpy):
+**Motor** (server, numpy + `dtaidistance`):
+
+Why not frame-by-frame pose matching (Mime Flow style)? Mime Flow compares each webcam frame
+with the reference frames inside a ~330 ms buffer, which only works when the user follows the
+video *in sync*. In the N-back the user performs from memory, later, at their own tempo, so
+the comparison must be a *temporal alignment* of two sequences, not a pose-by-pose check.
+Discretising a move into key poses alone loses the trajectory (a hook and a straight punch
+can end in similar poses), so key poses are used for feedback, not as the score.
+
 1. Client sends the response window's canonical joints + visibility + timestamps.
-2. Features per frame: unit bone directions (≈16 bones; head/hands/feet down-weighted;
-   z down-weighted because monocular depth is noisy; low visibility → low weight). Bone
-   directions are body-size invariant (body calibration feeds proportions to the renderer
-   and normalises pelvis displacement by leg length).
-3. Trim idle time by motion energy; resample to a fixed length; DTW with a Sakoe-Chiba band;
-   static postures use the best sustained 0.8 s hold instead.
+2. Features per frame (ported from Mime Flow, MIT): unit bone directions weighted by joint
+   importance and visibility (≈16 bones; head/hands/feet down-weighted; z down-weighted
+   because monocular depth is noisy). Bone directions are body-size invariant (body
+   calibration feeds proportions to the renderer and normalises pelvis displacement by leg
+   length). First derivatives are added so the alignment sees the motion's shape as well as
+   its poses.
+3. **Subsequence DTW** (`dtaidistance`, Apache-2.0, C-accelerated, multi-dimensional): the
+   whole target is aligned to the best-matching part of the 2–3× response window, which
+   absorbs the idle time before and after the move and any tempo difference. Static postures
+   use the best sustained 0.8 s hold instead.
 4. Error → score in [0, 1] using per-bone angular tolerances; lower-body tolerance is
    scaled by the flexibility profile; global strictness slider.
-5. **Lure check**: the response is also scored against the other recent stimuli; the trial is
-   correct if the target score ≥ threshold (default 0.7) and the target is the best match
-   (±0.03). The report says "you performed trial t-1's move" when applicable.
+5. **Per-item acceptance threshold** (idea from the Jackknife recogniser, Taranta et al.,
+   CHI 2017; reimplemented from the paper because its code licence is academic-only): each
+   item's threshold is calibrated offline against synthetic negatives (other library items,
+   time-scrambled and spliced versions of itself), so easy and hard moves are judged fairly
+   instead of sharing one global cut-off.
+6. **Lure check**: the response is also scored against the other recent stimuli; the trial is
+   correct if the target passes its threshold and is the best match (±0.03). The report says
+   "you performed trial t-1's move" when applicable.
+7. **Key-pose feedback** (idea from A-MAL, ICCVW 2019): key poses are extracted from the target
+   at velocity minima; the report shows which key pose was missed and which bones were off.
 
 **Facial**: calibrated blendshapes `clip((r − neutral) × gain, 0, 1)`; best 0.5 s window;
 score = 0.7 × cosine + 0.3 × (1 − mean abs diff on active dims). Calibration = 3 s neutral
