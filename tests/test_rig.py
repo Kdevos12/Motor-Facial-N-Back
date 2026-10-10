@@ -59,3 +59,31 @@ def test_positive_yaw_turns_toward_subject_left():
     assert p[J["l_shoulder"], 2] < -0.1
     mid_sh_x = (p[J["l_shoulder"], 0] + p[J["r_shoulder"], 0]) / 2
     assert p[J["nose"], 0] > mid_sh_x + 0.05
+
+
+def test_leg_ik_reaches_target_and_grounds_both_feet():
+    p = pose_joints({"l_leg_ik": [0.05, -0.80, 0.25], "r_leg_ik": [0.10, -0.80, -0.25]})
+    b = DEFAULT_BODY
+    ank = p[J["l_ankle"]] - p[J["l_hip"]]
+    np.testing.assert_allclose(ank, [0.05, -0.80, 0.25], atol=1e-6)
+    # equal drop on both legs -> both ankles at ankle height
+    np.testing.assert_allclose(p[[J["l_ankle"], J["r_ankle"]], 1], b.ankle_height, atol=1e-6)
+    # knees bend forward
+    assert p[J["l_knee"], 2] > (p[J["l_hip"], 2] + p[J["l_ankle"], 2]) / 2
+
+
+def test_arm_ik_then_direction_override():
+    from mfnb.motion.rig import merge_pose
+    pose = merge_pose({}, {"r_arm_ik": [-0.1, 0.15, 0.25]})
+    pose = merge_pose(pose, {"r_forearm": "@fwd"})
+    assert "r_arm_ik" not in pose and "r_upper_arm" in pose
+    p = pose_joints(pose)
+    assert p[J["r_wrist"], 2] > p[J["r_elbow"], 2] + 0.2
+
+
+def test_sampling_covers_every_frame_for_odd_durations():
+    for dur in (0.66, 0.71, 1.03, 2.345):
+        seq = sample_keys([(0, {}), (dur, {"r_upper_arm": "@fwd"})])
+        assert not np.isnan(seq).any()
+        # the last frame is the final key, not an all-zero frame
+        assert seq[-1, J["r_wrist"], 2] > 0.3

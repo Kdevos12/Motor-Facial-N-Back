@@ -29,6 +29,11 @@ ARM_SEGMENTS = ["upper_arm", "forearm", "hand"]
 LEG_SEGMENTS = ["thigh", "shin", "foot"]
 SEGMENTS = [f"{s}_{seg}" for s in ("l", "r") for seg in ARM_SEGMENTS + LEG_SEGMENTS]
 SCALARS = ["yaw", "twist", "pitch", "roll", "head_yaw", "head_pitch", "head_roll", "x", "z"]
+# Two-bone IK targets: "<side>_arm_ik" = wrist offset from the shoulder (chest frame),
+# "<side>_leg_ik" = ankle offset from the hip (pelvis frame); both side-relative [out, up, fwd]
+# in metres, optionally given as (target, pole_direction_spec).
+IK_KEYS = {"l_arm_ik": ("l", "arm"), "r_arm_ik": ("r", "arm"), "l_leg_ik": ("l", "leg"), "r_leg_ik": ("r", "leg")}
+DEFAULT_POLE = {"arm": "down+0.35out+0.1back", "leg": "fwd+0.12out"}
 
 
 @dataclass(frozen=True)
@@ -131,16 +136,74 @@ class ResolvedKey:
     dirs: np.ndarray  # (len(SEGMENTS), 3)
 
 
+def solve_two_bone(target, pole, l1: float, l2: float) -> tuple[np.ndarray, np.ndarray]:
+    """Directions of the two bones reaching ``target`` (clamped to reach) bending toward ``pole``."""
+    t = np.asarray(target, dtype=float)
+    d = float(np.linalg.norm(t))
+    if d < 1e-6:
+        raise ValueError("IK target at the joint origin")
+    t_hat = t / d
+    d = min(max(d, abs(l1 - l2) + 1e-4), l1 + l2 - 1e-4)
+    cos_a = (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)
+    a = np.arccos(np.clip(cos_a, -1.0, 1.0))
+    p = np.asarray(pole, dtype=float)
+    p = p - np.dot(p, t_hat) * t_hat
+    if np.linalg.norm(p) < 1e-6:
+        p = np.cross(t_hat, [1.0, 0.0, 0.0])
+        if np.linalg.norm(p) < 1e-6:
+            p = np.cross(t_hat, [0.0, 0.0, 1.0])
+    p = p / np.linalg.norm(p)
+    first = np.cos(a) * t_hat + np.sin(a) * p
+    mid = first * l1
+    second = t_hat * d - mid
+    return first, second / np.linalg.norm(second)
+
+
+def ik_dirs(key: str, spec, body: BodyDims = None) -> tuple[np.ndarray, np.ndarray]:
+    """Side-relative [out, up, fwd] directions of the two bones for an IK key."""
+    body = body or DEFAULT_BODY
+    _, limb = IK_KEYS[key]
+    if isinstance(spec, tuple) and len(spec) == 2 and not np.isscalar(spec[0]):
+        target, pole_spec = spec
+    else:
+        target, pole_spec = spec, DEFAULT_POLE[limb]
+    pole = parse_dir(pole_spec)[1]
+    l1, l2 = (body.upper_arm, body.forearm) if limb == "arm" else (body.thigh, body.shin)
+    return solve_two_bone(target, pole, l1, l2)
+
+
 def merge_pose(base: dict, update: dict) -> dict:
+    """Merge a partial pose onto ``base``. IK keys and the bone directions they drive
+    replace each other, whichever was set last wins."""
     out = dict(base)
     for k, v in update.items():
-        if k not in SCALARS and k not in SEGMENTS:
+        if k in IK_KEYS:
+            side, limb = IK_KEYS[k]
+            first, second = ("upper_arm", "forearm") if limb == "arm" else ("thigh", "shin")
+            out.pop(f"{side}_{first}", None)
+            out.pop(f"{side}_{second}", None)
+            out[k] = v
+        elif k in SEGMENTS or k in SCALARS:
+            for ik, (side, limb) in IK_KEYS.items():
+                bones = ("upper_arm", "forearm") if limb == "arm" else ("thigh", "shin")
+                if ik in out and k in (f"{side}_{bones[0]}", f"{side}_{bones[1]}"):
+                    d1, d2 = ik_dirs(ik, out.pop(ik))
+                    out[f"{side}_{bones[0]}"] = tuple(d1)
+                    out[f"{side}_{bones[1]}"] = tuple(d2)
+            out[k] = v
+        else:
             raise KeyError(f"unknown pose key {k!r}")
-        out[k] = v
     return out
 
 
 def resolve_pose(pose: dict, t: float = 0.0) -> ResolvedKey:
+    pose = dict(pose)
+    for ik, (side, limb) in IK_KEYS.items():
+        if ik in pose:
+            d1, d2 = ik_dirs(ik, pose.pop(ik))
+            bones = ("upper_arm", "forearm") if limb == "arm" else ("thigh", "shin")
+            pose[f"{side}_{bones[0]}"] = tuple(d1)
+            pose[f"{side}_{bones[1]}"] = tuple(d2)
     sc = {k: float(pose.get(k, 0.0)) for k in SCALARS}
     pel, chest, _ = frames_from_scalars({k: np.array([v]) for k, v in sc.items()})
     pel, chest = pel[0], chest[0]
@@ -169,17 +232,36 @@ def resolve_pose(pose: dict, t: float = 0.0) -> ResolvedKey:
     return ResolvedKey(t=t, scalars=sc, dirs=dirs)
 
 
-def _slerp(a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
-    """Slerp between unit vectors a,b (S,3) for weights w (T,) -> (T,S,3)."""
+def _slerp_half(a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
     dot = np.clip(np.sum(a * b, -1), -1.0, 1.0)
     om = np.arccos(dot)
     so = np.sin(om)
     w = w[:, None]
-    small = so < 1e-4
+    small = so < 1e-6
     safe_so = np.where(small, 1.0, so)
     wa = np.where(small, 1 - w, np.sin((1 - w) * om) / safe_so)
     wb = np.where(small, w, np.sin(w * om) / safe_so)
-    out = wa[..., None] * a + wb[..., None] * b
+    return wa[..., None] * a + wb[..., None] * b
+
+
+def _slerp(a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """Slerp between unit vectors a,b (S,3) for weights w (T,) -> (T,S,3).
+
+    Interpolates through the geodesic midpoint, so nearly opposite vectors turn through a
+    well-defined perpendicular instead of collapsing through zero."""
+    mid = a + b
+    norm = np.linalg.norm(mid, axis=-1)
+    opposite = norm < 1e-3
+    if opposite.any():
+        perp = np.cross(a[opposite], [0.0, 1.0, 0.0])
+        bad = np.linalg.norm(perp, axis=-1) < 1e-3
+        perp[bad] = np.cross(a[opposite][bad], [1.0, 0.0, 0.0])
+        mid[opposite] = perp
+        norm = np.linalg.norm(mid, axis=-1)
+    mid = mid / norm[:, None]
+    first = _slerp_half(a, mid, np.clip(w * 2.0, 0.0, 1.0))
+    second = _slerp_half(mid, b, np.clip(w * 2.0 - 1.0, 0.0, 1.0))
+    out = np.where((w < 0.5)[:, None, None], first, second)
     return out / np.linalg.norm(out, axis=-1, keepdims=True)
 
 
@@ -193,7 +275,7 @@ def interpolate(keys: list[ResolvedKey], fps: float = 30.0):
         raise ValueError("no keys")
     duration = keys[-1].t
     n = max(1, int(round(duration * fps)) + 1)
-    times = np.arange(n) / fps
+    times = np.minimum(np.arange(n) / fps, duration)
     sc = {k: np.zeros(n) for k in SCALARS}
     dirs = np.zeros((n, len(SEGMENTS), 3))
     if len(keys) == 1:
