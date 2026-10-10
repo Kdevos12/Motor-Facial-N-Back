@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import numpy as np
 from pydantic import BaseModel, Field
 
 from .. import __version__, assets, config
@@ -138,6 +139,9 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
         out = []
         for it in trainer.motor.items.values():
             d = it.meta()
+            f = it.frames
+            peak = int(np.argmax(np.linalg.norm(f - f[:1], axis=-1).sum(-1))) if not it.static else len(f) - 1
+            d["thumb"] = np.round(f[peak], 3).tolist()
             d["excluded"] = it.id in excluded
             d["status"] = (stats.get(it.id) or {}).get("status", "new")
             d["available"] = True if available is None else it.id in available
