@@ -46,6 +46,8 @@ class MotionItem:
     body_part: str = "upper"
     description: str = ""
     tags: list[str] = field(default_factory=list)
+    threshold: float = 0.45   # per-item acceptance threshold (see calibration.py)
+    chiral: bool = False      # mirrored version is distinguishable -> "switch sides" allowed
     frames: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     def meta(self) -> dict:
@@ -247,10 +249,22 @@ def build_procedural() -> list[MotionItem]:
     return items
 
 
-@lru_cache(maxsize=1)
+def apply_calibration(items: list[MotionItem], calib: dict[str, dict]) -> None:
+    for it in items:
+        c = calib.get(it.id)
+        if c:
+            it.threshold = float(c["threshold"])
+            it.chiral = bool(c["chiral"])
+        else:
+            it.chiral = it.sided
+
+
+@lru_cache(maxsize=2)
 def get_library(include_imported: bool = True) -> MotionLibrary:
+    from .calibration import load_calibration
     items = build_procedural()
     if include_imported:
         from .importers.pack import load_packs
         items += load_packs()
+    apply_calibration(items, load_calibration())
     return MotionLibrary(items)
