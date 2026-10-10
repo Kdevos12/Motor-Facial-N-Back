@@ -6,7 +6,8 @@ the calibration one). An expression passes when, over its best 0.5-s hold:
 (a) the response looks like the expected one (similarity >= threshold, 0.60 at normal strictness), where the
     expected response is the target scaled to what the tracker reports for this user (``expected``);
 (b) every key part of the expression clearly moved: at least ``gamma`` (0.35) of the way from the user's neutral
-    to that shape's maximum (their calibrated maximum, else the typical maximum on real faces);
+    to that shape's maximum (their calibrated maximum, else the typical maximum on real faces), less for a part
+    the target asks at a lower intensity (down to half that for 0.4 of a full effort);
 (c) a one-sided key part (a wink, one eyebrow, half a smile) moved clearly more on that side: the other side rose at
     most 0.7 x as much.
 
@@ -31,6 +32,7 @@ MIN_RANGE = 0.12
 MIN_DEADZONE = 0.03
 MIN_RISE = 0.10      # a calibration prompt must raise a shape at least this much to count as measured
 HOLD_S = 0.5
+FULL_INTENT = 0.8    # target intensity of a clear, full expression (the key-part rule's reference)
 
 
 def thresholds(strictness: float = 1.0) -> tuple[float, float]:
@@ -150,7 +152,9 @@ def key_check(target: FaceTarget, a: np.ndarray, gamma: float) -> tuple[np.ndarr
     fails: list[tuple[int, str]] = []
     for p, ks in enumerate(target.keys):
         frac = a[:, ks].mean(-1)
-        ratio = frac / max(gamma, 1e-6)
+        # a part asked at a lower intensity (0.4 of a full effort) needs proportionally less movement
+        need = gamma * float(np.clip(target.intent[ks].mean() / FULL_INTENT, 0.5, 1.0))
+        ratio = frac / max(need, 1e-6)
         g = np.minimum(g, ratio)
         if ratio[-1] < 1:
             fails.append((p, "weak"))

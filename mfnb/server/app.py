@@ -52,6 +52,7 @@ class ResponseIn(BaseModel):
 
 class BodyCalibrationIn(BaseModel):
     frames: list
+    framing: str = "full"
 
 
 class FaceCalibrationIn(BaseModel):
@@ -120,7 +121,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     @app.put("/api/profiles/{pid}/calibration/body")
     def calibrate_body(pid: int, body: BodyCalibrationIn):
         need_profile(pid)
-        return trainer.calibrate_body(pid, body.frames)
+        return trainer.calibrate_body(pid, body.frames, body.framing)
 
     @app.put("/api/profiles/{pid}/calibration/face")
     def calibrate_face(pid: int, body: FaceCalibrationIn):

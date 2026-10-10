@@ -310,7 +310,7 @@ class Trainer:
         return payload
 
     # -- calibration -------------------------------------------------------------------
-    def calibrate_body(self, pid: int, frames: list) -> dict:
+    def calibrate_body(self, pid: int, frames: list, framing: str = "full") -> dict:
         f = np.asarray(frames, dtype=float)
         if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10:
             raise ServiceError("need at least 10 frames of 19 joints")
@@ -330,6 +330,9 @@ class Trainer:
             "thigh": both("hip", "knee"), "shin": both("knee", "ankle"), "foot": both("ankle", "foot"),
         }
         default = DEFAULT_BODY.__dict__
+        if framing == "upper":   # legs out of the picture: keep the default proportions for them
+            for k in ("thigh", "shin", "foot"):
+                measured[k] = default[k]
         dims = {k: round(float(np.clip(v, 0.5 * default[k], 1.6 * default[k])), 3) for k, v in measured.items()}
         dims["ankle_height"] = default["ankle_height"]
         BodyDims.from_dict(dims)

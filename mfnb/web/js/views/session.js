@@ -8,9 +8,10 @@ import { displayFrames } from '../render/retarget.js';
 import { mirrorFrames, StickFigure } from '../render/stickman.js';
 import { refreshProfile, state } from '../state.js';
 import { h, itemLabel, mount, sleep, toast } from '../ui.js';
-import { attachVideo, stopCamera } from '../vision/camera.js';
+import { attachVideo, onCameraState, stopCamera } from '../vision/camera.js';
 import { SimFaceTracker, SimPoseTracker } from '../vision/sim.js';
-import { bodyCheck, FaceTracker, PoseTracker } from '../vision/trackers.js';
+import { bodyCheck, FaceTracker, headTurnSide, PoseTracker, raisedHandSide } from '../vision/trackers.js';
+import { cameraMirrored, cameraPicker, saveMirrored, setupAdvice, trackerOptions } from './camera_setup.js';
 import { pending } from './train.js';
 
 const FACE_STIM_S = 2.4;
@@ -71,8 +72,9 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
         ctl.tracker = new SimFaceTracker(state.meta.face_names, { typicalMax: state.meta.face_typical_max, rest: state.meta.face_rest });
       }
     } else {
-      await attachVideo(video);
-      ctl.tracker = modality === 'motor' ? new PoseTracker(video) : new FaceTracker(video);
+      await attachVideo(video, modality);
+      const opts = trackerOptions(modality);
+      ctl.tracker = modality === 'motor' ? new PoseTracker(video, opts) : new FaceTracker(video, opts);
     }
     if (ctl.aborted) { if (!simulate) stopCamera(); return; }
     mount(h('div', { class: 'center' }, h('div', { class: 'spinner' }), h('p', { class: 'muted' }, 'Loading the tracker…')));
@@ -82,29 +84,38 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     console.error(err);
     if (ctl.aborted) return;
     mount(h('div', { class: 'card stack' }, h('h2', {}, 'Camera or tracker unavailable'), h('p', { class: 'muted' }, String(err.message || err)),
-      h('p', {}, 'Allow camera access in your browser (the app runs on localhost, nothing leaves this computer), then retry.'),
+      h('p', {}, 'Allow camera access in your browser (the app runs on localhost, nothing leaves this computer), then retry. You can choose another camera here:'),
+      cameraPicker(modality, () => navigate(`#/session/${modality}`)),
       h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: () => navigate(`#/session/${modality}`) }, 'Retry'),
+        h('a', { class: 'btn', href: '#/help/camera' }, 'Phone as a camera'),
         h('a', { class: 'btn', href: `/?simulate#/train/${modality}` }, 'Demo mode'))));
     return;
   }
+  const display = simulate ? overlay : ctl.tracker.display;
+  const framing = modality === 'motor' ? ((cfg.overrides && cfg.overrides.framing) || s.motor.framing || 'full') : null;
 
-  // ---- camera check --------------------------------------------------------------
-  const ready = await cameraCheck(modality, ctl, video, overlay, simulate, prof);
-  if (!ready || ctl.aborted) return;
-  // facial: the resting face of today (light, camera and posture change between sessions)
-  const faceNeutral = modality === 'facial' ? await captureNeutral(ctl) : null;
-  if (ctl.aborted) return;
-
-  // ---- block ---------------------------------------------------------------------
+  // ---- camera check, resting reference, block ----------------------------------------
   let block;
-  try {
-    block = await api.startBlock({ profile_id: prof.id, modality, n: cfg.n, overrides: cfg.overrides, face_neutral: faceNeutral });
+  let problem = null;
+  for (;;) {
+    const ready = await cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, problem);
+    if (!ready || ctl.aborted) return;
+    // facial: the resting face of today (light, camera and posture change between sessions)
+    const faceNeutral = modality === 'facial' ? await captureNeutral(ctl) : null;
+    // motor: where the camera sees you from while you face the screen
+    const viewRest = modality === 'motor' && !simulate ? await captureView(ctl, framing) : null;
     if (ctl.aborted) return;
-  } catch (err) {
-    toast(err.message, 'error');
-    navigate(`#/train/${modality}`);
-    return;
+    try {
+      block = await api.startBlock({ profile_id: prof.id, modality, n: cfg.n, overrides: cfg.overrides,
+        face_neutral: faceNeutral, view_rest: viewRest });
+      if (ctl.aborted) return;
+      break;
+    } catch (err) {
+      if (/Fewer than 2 items/.test(err.message)) { toast(err.message, 'error'); navigate(`#/train/${modality}`); return; }
+      problem = err.message;
+    }
   }
+  if (block.view_warning) toast(block.view_warning);
 
   const figureCanvas = h('canvas', { class: modality === 'motor' ? 'figure' : 'face' });
   const phase = h('div', { class: 'phase' }, '');
@@ -116,17 +127,28 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   const progress = h('div', { class: 'progress' }, h('div', { style: { width: '0%' } }));
   const pauseBtn = h('button', { class: 'btn', onclick: () => togglePause() }, 'Pause');
   const selfview = h('div', { class: 'selfview', hidden: true });
-  if (!simulate) selfview.append(video, overlay);
+  if (!simulate) selfview.append(display, overlay);
   else selfview.append(overlay);
   const legend = modality === 'motor' ? h('div', { class: 'legend' },
     h('span', {}, h('i', { style: { background: 'var(--left)' } }), 'left side'),
     h('span', {}, h('i', { style: { background: 'var(--right)' } }), 'right side'),
     h('span', { class: 'muted' }, s.view === 'mirror' ? '(mirror view)' : s.view === 'back' ? '(seen from behind)' : '(facing you)')) : null;
+  // the camera stopped (unplugged, phone app closed): pause until it is back
+  const lostBox = h('div', { class: 'card stack lost', hidden: true },
+    h('h3', {}, 'Camera stopped'),
+    h('p', { class: 'muted' }, 'Reconnect it (for a phone: restart scrcpy or DroidCam), then resume.'),
+    h('button', { class: 'btn primary', onclick: async () => {
+      try {
+        await attachVideo(video, modality);
+        lostBox.hidden = true; ctl.cameraLost = false;
+        if (ctl.paused) togglePause();
+      } catch (err) { toast(err.message, 'error'); }
+    } }, 'Resume'));
   mount(h('div', { class: 'stage' },
     h('div', { class: 'stage-top' },
       h('strong', {}, `${modality === 'motor' ? 'Motor' : 'Facial'} · N = ${block.n}`), counter, progress,
       pauseBtn, h('button', { class: 'btn danger', onclick: () => endBlock() }, 'End block')),
-    h('div', { class: 'stage-main' }, figureCanvas, phase, instr, nameTag, timebar, selfview, legend, flash),
+    h('div', { class: 'stage-main' }, figureCanvas, phase, instr, nameTag, timebar, selfview, legend, flash, lostBox),
     h('div', { class: 'stage-bottom small muted' }, h('span', {}, h('kbd', {}, 'Space'), ' pause · ', h('kbd', {}, 'Esc'), ' end block'))));
 
   if (modality === 'motor') {
@@ -144,9 +166,19 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
       if (simulate) {
         if (!ctl.simFig) ctl.simFig = new StickFigure(overlay, { view: 'mirror', yaw: 0, grid: false });
         if (sample.joints) ctl.simFig.draw(sample.joints);
-      } else drawPoseOverlay(overlay, video, sample.image);
-    } else if (!simulate) drawFaceOverlay(overlay, video, sample.landmarks);
+      } else drawPoseOverlay(overlay, display, sample.image);
+    } else if (!simulate) drawFaceOverlay(overlay, display, sample.landmarks);
   }));
+
+  if (!simulate) {
+    ctl.unsub.push(onCameraState((what) => {
+      if (what === 'unmuted' && ctl.cameraLost) return;
+      if (what === 'ended' || what === 'muted') {
+        ctl.cameraLost = true; lostBox.hidden = false;
+        if (!ctl.paused) togglePause();
+      }
+    }));
+  }
 
   keyRef.handler = (what) => (what === 'pause' ? togglePause() : endBlock());
   function togglePause() {
@@ -270,6 +302,24 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   }
 }
 
+// ~2 s standing (or sitting) relaxed, facing the screen: the server measures the camera's angle from it.
+async function captureView(ctl, framing) {
+  const msg = h('h2', {}, 'Face the screen, arms relaxed by your sides');
+  const sub = h('p', { class: 'muted' }, framing === 'upper'
+    ? 'Sit or stand still, shoulders square to the screen. This measures where the camera sees you from.'
+    : 'Stand still, feet together, facing the screen (not the camera). This measures where the camera sees you from.');
+  mount(h('div', { class: 'center stack', style: { padding: '40px', textAlign: 'center' } }, msg, sub));
+  for (let attempt = 0; attempt < 2 && !ctl.aborted; attempt++) {
+    for (const k of ['3', '2', '1']) { if (ctl.aborted) return null; sub.textContent = `Hold still… ${k}`; await sleep(700); }
+    sub.textContent = 'Measuring… keep still';
+    const rec = await ctl.tracker.record(2);
+    if (rec.frames.length >= 20) return { frames: rec.frames, visibility: rec.visibility };
+    msg.textContent = 'You were not tracked — step back into view';
+    await sleep(1500);
+  }
+  return null;
+}
+
 // 2 s of the relaxed face; returns the frames or null when the face was not tracked.
 async function captureNeutral(ctl) {
   const avatarCanvas = h('canvas', { class: 'face', style: { width: '200px', height: '200px' } });
@@ -288,50 +338,93 @@ async function captureNeutral(ctl) {
   return null;
 }
 
-// Returns true when the user is in frame and clicked start.
-function cameraCheck(modality, ctl, video, overlay, simulate, prof) {
+// Returns true when the user is in frame and clicked start. Also checks once per camera whether its picture is
+// mirrored (left and right swapped), with a movement of known side.
+function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, problem) {
   return new Promise((resolve) => {
+    const s = prof.settings;
     const items = modality === 'motor'
-      ? [['person', 'Person detected'], ['full', 'Whole body visible (head to feet)'], ['centered', 'Inside the frame']]
+      ? [['person', 'Person detected'],
+        ['full', framing === 'upper' ? 'Head, shoulders, arms and hands visible' : 'Whole body visible (head to feet)'],
+        ['centered', framing === 'upper' ? 'Room above your head for raised hands' : 'Inside the frame']]
       : [['face', 'Face detected'], ['still', 'Face steady and well lit']];
+    const needSide = !simulate && typeof cameraMirrored(modality) !== 'boolean';
+    if (needSide) items.push(['side', 'Left/right check']);
     const dots = Object.fromEntries(items.map(([k]) => [k, h('span', { class: 'dot' })]));
     const startBtn = h('button', { class: 'btn primary big', disabled: !simulate, onclick: () => done(true) }, 'Start the block');
+    const sidePrompt = h('p', { class: 'notice', hidden: !needSide },
+      modality === 'motor' ? '✋ Raise your RIGHT hand above your head for a moment.' : '↩ Turn your head to your LEFT for a moment, then back.');
     const view = h('div', { class: 'camview' });
-    if (!simulate) view.append(video, overlay);
+    if (!simulate) view.append(display, overlay);
     else view.append(overlay);
     let okSince = null;
+    let sideVotes = [];
+    let sideDone = !needSide;
     const unsub = ctl.tracker.onFrame((sample) => {
       let st;
       if (modality === 'motor') {
-        st = bodyCheck(sample);
+        st = bodyCheck(sample, framing);
         if (simulate) {
           if (!ctl.checkFig) ctl.checkFig = new StickFigure(overlay, { view: 'mirror', yaw: 0 });
           if (sample.joints) ctl.checkFig.draw(sample.joints);
-        } else drawPoseOverlay(overlay, video, sample.image);
+        } else drawPoseOverlay(overlay, display, sample.image);
       } else {
         st = { face: !!sample.shapes, still: !!sample.shapes };
-        if (!simulate) drawFaceOverlay(overlay, video, sample.landmarks);
+        if (!simulate) drawFaceOverlay(overlay, display, sample.landmarks);
       }
+      if (!sideDone) {
+        const m = modality === 'motor' ? raisedHandSide(sample) : headTurnSide(sample);
+        sideVotes = m === null ? sideVotes.slice(-3) : [...sideVotes, m].slice(-12);
+        if (sideVotes.length >= 8 && sideVotes.every((v) => v === sideVotes[0])) {
+          sideDone = true;
+          const mirrored = sideVotes[0];
+          ctl.tracker.mirrored = mirrored;
+          sidePrompt.textContent = mirrored
+            ? 'This camera sends a mirror image: left and right are now swapped back for scoring.'
+            : 'Left and right are the right way round.';
+          sidePrompt.classList.toggle('warn', mirrored);
+          saveMirrored(modality, mirrored).catch((err) => toast(err.message, 'error'));
+        }
+      }
+      st.side = sideDone;
       for (const [k] of items) dots[k].classList.toggle('ok', !!st[k]);
       const ok = items.every(([k]) => st[k]);
       okSince = ok ? (okSince ?? performance.now()) : null;
       startBtn.disabled = !(okSince && performance.now() - okSince > 800);
     });
-    const done = (v) => { unsub(); ctl.cancelCheck = null; resolve(v); };
+    const done = (v) => { unsub(); picker.cleanup?.(); ctl.cancelCheck = null; resolve(v); };
     ctl.cancelCheck = () => done(false);
+    // a different camera or rotation: restart the session page with it
+    const picker = cameraPicker(modality, () => { done(false); navigate(`#/session/${modality}`); });
+    const framingSwitch = modality === 'motor' ? h('div', { class: 'field' }, h('label', {}, 'Framing'),
+      h('div', { class: 'row' }, h('span', {}, framing === 'upper' ? 'Upper body (head to mid-thigh)' : 'Whole body (head to feet)'),
+        h('button', { class: 'btn ghost', onclick: async () => {
+          const next = framing === 'upper' ? 'full' : 'upper';
+          try {
+            await api.patchProfile(prof.id, { settings: { motor: { framing: next } } });
+            if (pending) pending.config = { modality, n: null, overrides: null };
+            done(false); navigate(`#/session/${modality}`);
+          } catch (err) { toast(err.message, 'error'); }
+        } }, framing === 'upper' ? 'Switch to whole body' : 'Camera too close? Switch to upper body'))) : null;
     mount(h('div', { class: 'stack', style: { padding: '22px', maxWidth: '1280px', margin: '0 auto' } },
       h('h1', {}, 'Camera check'),
+      problem ? h('p', { class: 'notice warn' }, problem) : null,
       h('div', { class: 'camcheck' }, view,
         h('div', { class: 'card stack' },
           h('ul', { class: 'checklist' }, items.map(([k, label]) => h('li', {}, dots[k], label))),
-          modality === 'motor'
-            ? h('p', { class: 'muted small' }, 'Stand 2–3 m from the camera, camera around hip height, feet visible. Clear about 1.5 × 1.5 m around you.')
-            : h('p', { class: 'muted small' }, 'Sit close to the camera, face the screen, light on your face (not behind you). After Start you will hold a relaxed face for 2 seconds.'),
+          sidePrompt,
+          h('p', { class: 'muted small' }, setupAdvice(modality, framing, s.stance)),
+          modality === 'facial'
+            ? h('p', { class: 'muted small' }, 'After Start you will hold a relaxed face for 2 seconds.')
+            : h('p', { class: 'muted small' }, 'After Start you will stand (or sit) still for 2 seconds, facing the screen, so the app can measure the camera angle.'),
           modality === 'facial' && !(prof.calibration || {}).face
             ? h('p', { class: 'small notice' }, 'Tip: the face calibration (about a minute, in Settings) fits the scoring to your face and unlocks the mouth movements (jaw and mouth sideways, pressed or rolled lips, O lips, corners down). ',
               h('a', { href: '#/calibrate/face' }, 'Calibrate now'))
             : null,
           h('div', { class: 'row' }, startBtn, h('button', { class: 'btn ghost', onclick: () => done(true) }, 'Start anyway')),
+          simulate ? null : h('details', {}, h('summary', {}, 'Camera'), picker,
+            h('p', { class: 'small muted' }, h('a', { href: '#/help/camera' }, 'Using your phone as the camera'))),
+          framingSwitch,
           h('a', { class: 'btn ghost', href: `#/train/${modality}` }, '← Back')))));
   });
 }

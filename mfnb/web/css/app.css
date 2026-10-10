@@ -184,3 +184,9 @@ kbd { background: var(--panel-2); border: 1px solid var(--line); border-bottom-w
 .notice { background: #1d2540; border: 1px solid #34407a; border-radius: 9px; padding: 9px 12px; }
 .notice.warn { background: #3a2f17; border-color: #6b5a1f; }
 .steps { color: var(--muted); font-size: .85rem; }
+.help { max-width: 900px; margin: 0 auto; line-height: 1.55; }
+.help pre.code { background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; overflow-x: auto; font-size: .85rem; white-space: pre; }
+.help code { background: var(--bg-2); padding: 1px 5px; border-radius: 5px; font-size: .88em; }
+.help h2 { margin-top: 1em; }
+.stage-main .lost { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 420px; z-index: 5; }
+details summary { cursor: pointer; color: var(--muted); }
