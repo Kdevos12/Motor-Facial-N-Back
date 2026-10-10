@@ -46,7 +46,12 @@ DEFAULT_SETTINGS: dict = {
     "strictness": 1.0,                # 0.7 lenient ... 1.3 strict
     "n_mode": "adaptive",             # adaptive / manual
     "motor": {"n": 1, "block_base": 20, "categories": [], "complexity": [1, 3], "variable_n": False,
-              "chirality_p": 0.0, "sequence_p": 0.0, "sources": []},
+              "chirality_p": 0.0, "sequence_p": 0.0, "sources": [],
+              "framing": "full"},             # full (head to feet in view) / upper (head to mid-thigh)
+    # cameras: one per modality (e.g. a phone for the body, the laptop webcam for the face); rotate for a phone
+    # mounted sideways; camera_mirror remembers, per camera name, whether it sends a mirror image
+    "cameras": {"motor": {"deviceId": "", "label": "", "rotate": 0}, "facial": {"deviceId": "", "label": "", "rotate": 0}},
+    "camera_mirror": {},
     "facial": {"n": 1, "block_base": 20, "categories": [], "complexity": [1, 3]},
 }
 

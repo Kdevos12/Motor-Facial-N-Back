@@ -41,6 +41,7 @@ class BlockIn(BaseModel):
     overrides: dict[str, Any] | None = None
     seed: int | None = None
     face_neutral: list | None = None   # 2 s of the user's relaxed face, taken at the camera check
+    view_rest: dict | None = None      # motor: {frames, visibility} of ~2 s standing relaxed, facing the screen
 
 
 class ResponseIn(BaseModel):
@@ -186,7 +187,8 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     @app.post("/api/blocks")
     def start_block(body: BlockIn):
         need_profile(body.profile_id)
-        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed, body.face_neutral)
+        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed, body.face_neutral,
+                                   body.view_rest)
 
     @app.get("/api/blocks/{bid}")
     def get_block(bid: int, report: bool = False):

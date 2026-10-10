@@ -159,3 +159,25 @@ def test_library_endpoints_and_exclusions(client):
     one = client.get("/api/library/motor/box.jab").json()
     assert len(one["frames"]) > 10 and one["fps"] == 30
     assert client.get("/api/library/motor/nope").status_code == 404
+
+
+def test_motor_block_measures_the_camera_angle(client):
+    from mfnb.motion.library import get_library
+    from mfnb.motion.scoring import rot_y
+    p = make_profile(client)
+    rest = get_library().get("pose.mountain").frames[0][None].repeat(40, 0)
+
+    def seen(deg):
+        return (rest @ rot_y(np.radians(deg)).T).tolist()
+    r = client.post("/api/blocks", json={"profile_id": p["id"], "modality": "motor", "n": 1,
+                                         "view_rest": {"frames": seen(80)}})
+    assert r.status_code == 400 and "80°" in r.json()["detail"]
+    block = client.post("/api/blocks", json={"profile_id": p["id"], "modality": "motor", "n": 1,
+                                             "view_rest": {"frames": seen(50)}}).json()
+    assert abs(block["view"]["yaw_deg"] - 50) < 3 and "50°" in block["view_warning"]
+    assert client.get(f"/api/profiles/{p['id']}").json()["calibration"]["view"]["yaw_deg"] == block["view"]["yaw_deg"]
+    client.patch(f"/api/profiles/{p['id']}", json={"settings": {"motor": {"framing": "upper"}}})
+    block = client.post("/api/blocks", json={"profile_id": p["id"], "modality": "motor", "n": 1,
+                                             "view_rest": {"frames": seen(10)}}).json()
+    assert block["framing"] == "upper" and block["view_warning"] is None
+    assert all(it["body_part"] == "upper" for it in block["items"].values())

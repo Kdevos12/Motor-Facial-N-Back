@@ -48,14 +48,14 @@ def cmd_library(_args) -> int:
 
 
 def cmd_calibrate(args) -> int:
-    from .motion.calibration import CALIBRATION_FILE, calibrate, save_calibration, user_calibration_file
+    from .motion.calibration import CALIBRATION_FILE, calibrate_all, save_calibration, user_calibration_file
     from .motion.library import get_library
     lib = get_library()
     items = [i for i in lib.items.values() if args.bundled or i.source not in ("procedural", "cmu")]
     if not items:
         print("Nothing to calibrate: bundled moves are already calibrated (use --bundled to redo them).")
         return 0
-    data = calibrate(items, progress=lambda k, n: print(f"  {k}/{n}"), pool=list(lib.items.values()))
+    data = calibrate_all(items, progress=lambda k, n: print(f"  {k}/{n}"), pool=list(lib.items.values()))
     path = CALIBRATION_FILE if args.bundled else user_calibration_file()
     save_calibration(data, path)
     print(f"Calibrated {len(data)} items -> {path}")

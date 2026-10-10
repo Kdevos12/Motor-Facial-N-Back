@@ -16,7 +16,7 @@ from ..face.expressions import FaceLibrary, get_face_library
 from ..face.scoring import MIN_RISE, FaceCalibration, FaceTarget, neutral_from_frames, orient, score_face, thresholds
 from ..motion.library import MotionLibrary, get_library
 from ..motion.rig import DEFAULT_BODY, BodyDims
-from ..motion.scoring import ResponseInput, Tolerance, judge, score_motor
+from ..motion.scoring import ResponseInput, Tolerance, View, estimate_view, judge, score_motor
 from ..motion.skeleton import J
 from ..nback.adaptive import next_n
 from ..nback.plan import PlanOptions, TrialPlan, lure_items, make_plan, resolve_targets
@@ -24,6 +24,7 @@ from ..progress.mastery import ItemStats, record_attempt, record_seen, status
 from ..storage.db import Store
 
 MODALITIES = ("motor", "facial")
+VIEW_WARN_YAW, VIEW_WARN_TILT, VIEW_MAX_YAW = 45.0, 30.0, 70.0
 FACE_STIM_S = 2.4  # neutral -> expression -> hold -> neutral
 # Face calibration prompts -> the shapes each one measures (the shapes it is about, not its side effects).
 CALIBRATION_PROMPTS = {
@@ -88,12 +89,39 @@ class Trainer:
         d["duration_s"] = FACE_STIM_S
         return d
 
-    def motor_pool(self, prof: dict, overrides: dict | None = None):
+    @staticmethod
+    def framing(settings: dict, overrides: dict | None = None) -> str:
+        f = {**settings["motor"], **(overrides or {})}.get("framing", "full")
+        return f if f in ("full", "upper") else "full"
+
+    def motor_pool(self, prof: dict, overrides: dict | None = None, camera_yaw_deg: float | None = None):
         s = prof["settings"]
         ms = {**s["motor"], **(overrides or {})}
+        if camera_yaw_deg is None:
+            camera_yaw_deg = float((prof["calibration"].get("view") or {}).get("yaw_deg", 0.0))
         return self.motor.filter(categories=ms.get("categories") or None, complexity=tuple(ms.get("complexity", (1, 5))),
                                  flexibility=s["flexibility"], space=s["space"], allow_turn_away=s["allow_turn_away"],
-                                 exclude=self.store.exclusions(prof["id"], "motor"), sources=ms.get("sources") or None)
+                                 exclude=self.store.exclusions(prof["id"], "motor"), sources=ms.get("sources") or None,
+                                 framing=self.framing(s, overrides), camera_yaw_deg=camera_yaw_deg)
+
+    def measure_view(self, pid: int, rest: dict, framing: str) -> tuple[View, str | None]:
+        """Camera angle from ~2 s of the user relaxed and facing the screen. Too oblique a camera is refused."""
+        f = np.asarray(rest.get("frames", []), dtype=float)
+        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10 or not np.isfinite(f).all():
+            raise ServiceError("You were not tracked while standing still: step back into view and try again.")
+        vis = rest.get("visibility")
+        view = estimate_view(f, None if vis is None else np.asarray(vis, float), framing)
+        yaw, tilt = abs(view.yaw_deg), view.tilt_deg
+        side = "left" if view.yaw_deg > 0 else "right"
+        if yaw > VIEW_MAX_YAW:
+            raise ServiceError(f"The camera sees you from about {yaw:.0f}° to your {side}. Place it within 45° of "
+                               "straight in front of you, and face the screen while it measures.")
+        warning = None
+        if yaw > VIEW_WARN_YAW or tilt > VIEW_WARN_TILT:
+            warning = (f"The camera is about {yaw:.0f}° to your {side} and tilted {tilt:.0f}°. Scoring corrects for "
+                       "it, but tracking is more reliable within 30° and with the camera around chest height.")
+        self.store.set_calibration(pid, "view", view.to_dict())
+        return view, warning
 
     def face_calibration(self, prof: dict) -> FaceCalibration:
         return FaceCalibration.from_dict(prof["calibration"].get("face"))
@@ -106,7 +134,7 @@ class Trainer:
 
     # -- blocks ------------------------------------------------------------------------
     def start_block(self, pid: int, modality: str, n: int | None = None, overrides: dict | None = None,
-                    seed: int | None = None, face_neutral: list | None = None) -> dict:
+                    seed: int | None = None, face_neutral: list | None = None, view_rest: dict | None = None) -> dict:
         if modality not in MODALITIES:
             raise ServiceError(f"unknown modality {modality}")
         prof = self._profile(pid)
@@ -116,12 +144,16 @@ class Trainer:
         if n < 0 or n > 12:
             raise ServiceError("N must be between 0 and 12")
         rng = random.Random(seed)
+        view, view_warning = None, None
         if modality == "motor":
-            pool = self.motor_pool(prof, overrides)
+            framing = self.framing(s, overrides)
+            if view_rest is not None:
+                view, view_warning = self.measure_view(pid, view_rest, framing)
+            pool = self.motor_pool(prof, overrides, None if view is None else view.yaw_deg)
             opts = PlanOptions(n=n, n_trials=int(ms["block_base"]) + n, variable_n=bool(ms.get("variable_n")),
                                chirality_p=float(ms.get("chirality_p", 0.0)), sequence_p=float(ms.get("sequence_p", 0.0)),
                                stance_mirror=s["stance"] == "southpaw")
-            kw = dict(chiral={i.id for i in pool if i.chiral},
+            kw = dict(chiral={i.id for i in pool if self.motor.chiral(i.id, framing)},
                       side_variety={i.id for i in pool if i.sided and not i.stance_based},
                       stance_based={i.id for i in pool if i.stance_based})
         else:
@@ -132,6 +164,9 @@ class Trainer:
             raise ServiceError("Fewer than 2 items match your filters: widen the categories or complexity range.")
         plan = make_plan([i.id for i in pool], opts, rng, **kw)
         config = {"settings": s, "overrides": overrides or {}, "pool_size": len(pool)}
+        if view is not None:
+            config["view"] = view.to_dict()
+            config["view_warning"] = view_warning
         if modality == "facial" and face_neutral is not None:
             # the resting face of this session (lighting, camera and posture change from day to day)
             try:
@@ -161,8 +196,11 @@ class Trainer:
             items = {i: self.motor_item_payload(i) for i in ids}
         else:
             items = {i: self.face_item_payload(i) for i in ids}
+        cfg = block["config"]
         return {"block_id": bid, "modality": modality, "n": block["n"], "trials": trials, "items": items,
-                "status": block["status"], "settings": block["config"]["settings"]}
+                "status": block["status"], "settings": cfg["settings"],
+                "framing": self.framing(cfg["settings"], cfg.get("overrides")) if modality == "motor" else None,
+                "view": cfg.get("view"), "view_warning": cfg.get("view_warning")}
 
     def submit_response(self, bid: int, idx: int, payload: dict) -> dict:
         block = self.store.get_block(bid)
@@ -185,14 +223,17 @@ class Trainer:
                 return self._invalid(bid, idx, plan, targets, "no tracking data")
             vis = payload.get("visibility")
             times = payload.get("times")
+            cfg = block["config"]
+            framing = self.framing(cfg["settings"], cfg.get("overrides"))
+            view = View.from_dict(cfg.get("view"))
             res = score_motor([self.motor.frames(i, m) for i, m in targets],
                               ResponseInput(frames, None if times is None else np.asarray(times, float),
                                             None if vis is None else np.asarray(vis, float)),
                               static=len(targets) == 1 and self.motor.get(targets[0][0]).static,
                               tolerance=Tolerance(strictness=float(s["strictness"]), flexibility=s["flexibility"]),
                               lures=[self.motor.frames(i, m) for i, m in lures],
-                              lure_static=[self.motor.get(i).static for i, _ in lures])
-            threshold = float(np.mean([self.motor.get(i).threshold for i, _ in targets]))
+                              lure_static=[self.motor.get(i).static for i, _ in lures], framing=framing, view=view)
+            threshold = float(np.mean([self.motor.threshold(i, framing) for i, _ in targets]))
             names = {i: self.motor.get(i).name for i, _ in lures}
         else:
             calib = self.face_calibration(prof)

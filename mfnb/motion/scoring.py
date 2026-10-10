@@ -22,6 +22,10 @@ LOWER_MASK = np.array([b[0] in LOWER_BODY_BONES for b in BONES])
 FLEX_FACTOR = {"low": 1.6, "medium": 1.25, "high": 1.0}
 MAIN_JOINTS = [J[n] for n in ("l_shoulder", "r_shoulder", "l_elbow", "r_elbow", "l_wrist", "r_wrist",
                               "l_hip", "r_hip", "l_knee", "r_knee", "l_ankle", "r_ankle")]
+ARM_JOINTS = [J[n] for n in ("l_shoulder", "r_shoulder", "l_elbow", "r_elbow", "l_wrist", "r_wrist")]
+HIP_JOINTS = [J["l_hip"], J["r_hip"]]
+LEG_JOINTS = [J[n] for n in ("l_knee", "r_knee", "l_ankle", "r_ankle")]
+FRAMINGS = ("full", "upper")   # whole body in view / head to mid-thigh (seated or close camera)
 DEFAULT_THRESHOLD = 0.45
 COST_CAP = 3.0
 MIN_KEYPOSE_DEV = 0.15
@@ -188,18 +192,33 @@ class Scorer:
                                                         "hit": bool(smooth[j] < 1.0), "error": round(float(smooth[j]), 3)}])
 
 
-def keypose_indices(frames_30: np.ndarray, max_n: int = 4) -> list[int]:
+def bone_weights(framing: str = "full", hips_ok: bool = True) -> np.ndarray:
+    """Bones scored for a framing: 'upper' drops the legs, and the hip line and torso when the hips are out of
+    the picture."""
+    w = BONE_WEIGHTS.astype(float).copy()
+    if framing == "upper":
+        w[LOWER_MASK] = 0.0
+        if not hips_ok:
+            w[[BONE_NAMES.index("torso"), BONE_NAMES.index("hip line")]] = 0.0
+    return w
+
+
+def keypose_indices(frames_30: np.ndarray, max_n: int = 4, weights: np.ndarray | None = None) -> list[int]:
     """Key poses of a target (indices at FEATURE_FPS): extreme poses (local maxima of the
-    deviation from the starting pose) and slow-down points, all far from the start."""
+    deviation from the starting pose) and slow-down points, all far from the start.
+    ``weights`` restricts both to the scored bones (upper-body framing)."""
     f = resample(frames_30, None, FEATURE_FPS)
     if len(f) < 3:
         return [len(f) - 1]
     sc = Scorer()
-    dev = sc.deviation(sc.prepare(f))
+    dev = sc.deviation(sc.prepare(f, weights))
     top = float(dev.max())
     if top < 1e-6:
         return [len(f) - 1]
-    speed = np.linalg.norm(np.diff(f, axis=0), axis=-1).sum(-1)
+    moving = np.diff(f, axis=0)
+    if weights is not None and weights[LOWER_MASK].sum() == 0:
+        moving[:, LEG_JOINTS + [J["l_foot"], J["r_foot"]]] = 0.0
+    speed = np.linalg.norm(moving, axis=-1).sum(-1)
     speed = np.concatenate([[speed[0]], speed])
     cands = [int(np.argmax(dev))]
     for i in range(1, len(f) - 1):
@@ -225,57 +244,192 @@ class ResponseInput:
     visibility: np.ndarray | None = None  # (T, 19)
 
 
-def clean_response(resp: ResponseInput) -> tuple[np.ndarray | None, str]:
-    """Drop low-visibility frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid)."""
+def clean_framed(resp: ResponseInput, framing: str = "full") -> tuple[np.ndarray | None, str, bool]:
+    """Drop low-visibility frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid, hips_ok).
+    The browser sets the visibility of joints outside the picture to 0. In 'upper' framing only the arms are
+    required; the hips count when they are in the picture in at least 80% of the frames."""
     frames = np.asarray(resp.frames, dtype=float)
     times = None if resp.times_s is None else np.asarray(resp.times_s, dtype=float)
     if len(frames) < 5 or not np.isfinite(frames).all():
-        return None, "no tracking data"
+        return None, "no tracking data", False
+    hips_ok = True
     if resp.visibility is not None:
-        vis = np.asarray(resp.visibility, dtype=float)[:, MAIN_JOINTS]
+        vis_all = np.asarray(resp.visibility, dtype=float)
+        if framing == "upper":
+            hips_ok = float(np.mean(vis_all[:, HIP_JOINTS].min(-1) > 0.5)) >= 0.8
+            joints = ARM_JOINTS + (HIP_JOINTS if hips_ok else [])
+        else:
+            joints = MAIN_JOINTS
+        vis = vis_all[:, joints]
         ok = (vis.min(-1) >= 0.25) & (vis.mean(-1) >= 0.5)
         if ok.mean() < 0.5:
-            return None, "body not fully visible"
+            return None, ("arms not fully visible" if framing == "upper" else "body not fully visible"), hips_ok
         frames = frames[ok]
         times = None if times is None else times[ok]
     if times is None:
         times = np.arange(len(frames)) / SOURCE_FPS
     if times[-1] - times[0] < 0.5:
-        return None, "response too short"
-    return resample(frames, times, FEATURE_FPS), ""
+        return None, "response too short", hips_ok
+    return resample(frames, times, FEATURE_FPS), "", hips_ok
+
+
+def clean_response(resp: ResponseInput) -> tuple[np.ndarray | None, str]:
+    """Drop low-visibility frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid)."""
+    frames, reason, _ = clean_framed(resp, "full")
+    return frames, reason
+
+
+# ---- camera viewpoint ----------------------------------------------------------------------------------------
+# MediaPipe's world landmarks follow the camera's axes. A camera placed to the side, or tilted, makes a correct
+# move look rotated. A fixed rotation measured while the user stands relaxed facing the SCREEN (start of the
+# block) brings the response back to the screen's frame; the user's heading at the start of each trial (while
+# still relaxed, before the move) corrects a small drift. Neither looks at the target, so a move done without its
+# defining turn, or on the wrong side, is not rotated into a pass.
+UP = np.array([0.0, 1.0, 0.0])
+
+
+def _unit(v):
+    v = np.asarray(v, float)
+    return v / max(float(np.linalg.norm(v)), 1e-9)
+
+
+def rot_y(rad: float) -> np.ndarray:
+    c, s = np.cos(rad), np.sin(rad)
+    return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+
+
+def rot_between(u, v) -> np.ndarray:
+    """Smallest rotation taking direction u onto v."""
+    u, v = _unit(u), _unit(v)
+    axis = np.cross(u, v)
+    s, c = np.linalg.norm(axis), float(np.dot(u, v))
+    if s < 1e-9:
+        return np.eye(3)
+    k = axis / s
+    K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+    ang = np.arctan2(s, c)
+    return np.eye(3) + np.sin(ang) * K + (1 - np.cos(ang)) * K @ K
+
+
+def _mid(f, a, b):
+    return (f[..., J[a], :] + f[..., J[b], :]) / 2
+
+
+def lateral(f, use_hips: bool = True):
+    """The subject's right-to-left line (shoulders, plus hips)."""
+    v = f[..., J["l_shoulder"], :] - f[..., J["r_shoulder"], :]
+    return v + (f[..., J["l_hip"], :] - f[..., J["r_hip"], :] if use_hips else 0.0)
+
+
+def yaw_of(lat) -> float:
+    """Facing angle (rad) about the vertical of a lateral line: 0 = facing the camera (+z)."""
+    return float(np.arctan2(-lat[2], lat[0]))
+
+
+@dataclass
+class View:
+    """Rotation taking camera-frame coordinates into the frame of the screen the user faces."""
+    R: np.ndarray = field(default_factory=lambda: np.eye(3))
+    yaw_deg: float = 0.0     # how far round the camera sees the user (0 = straight in front)
+    tilt_deg: float = 0.0    # camera pitch/roll
+
+    def to_dict(self) -> dict:
+        return {"R": np.round(self.R, 5).tolist(), "yaw_deg": round(self.yaw_deg, 1), "tilt_deg": round(self.tilt_deg, 1)}
+
+    @classmethod
+    def from_dict(cls, d: dict | None) -> "View | None":
+        if not d:
+            return None
+        return cls(np.asarray(d["R"], float), float(d.get("yaw_deg", 0.0)), float(d.get("tilt_deg", 0.0)))
+
+
+def estimate_view(frames: np.ndarray, visibility: np.ndarray | None = None, framing: str = "full") -> View:
+    """From ~2 s of the user standing (or sitting) relaxed, facing the screen. 'Up' is the trunk (and the legs
+    when in view) made vertical; 'front' makes the shoulder and hip lines parallel to the screen."""
+    f = np.asarray(frames, float)
+    vis = None if visibility is None else np.asarray(visibility, float)
+
+    def seen(idx):
+        return vis is None or float(np.mean(vis[:, idx].min(-1) > 0.5)) >= 0.8
+    hips = seen(HIP_JOINTS) if framing == "upper" else True
+    legs = framing == "full" and seen(LEG_JOINTS)
+    if hips:
+        up = np.mean([_unit(v) for v in _mid(f, "l_shoulder", "r_shoulder") - _mid(f, "l_hip", "r_hip")], axis=0)
+        if legs:
+            up = up + np.mean([_unit(v) for v in _mid(f, "l_hip", "r_hip") - _mid(f, "l_ankle", "r_ankle")], axis=0)
+        R_up = rot_between(up, UP)
+        tilt = float(np.degrees(np.arccos(np.clip(_unit(up)[1], -1, 1))))
+    else:
+        # hips out of the picture: the trunk direction is unknown, assume a level camera
+        R_up, tilt = np.eye(3), 0.0
+    yaw = yaw_of((lateral(f, hips) @ R_up.T).mean(0))
+    return View(rot_y(-yaw) @ R_up, float(np.degrees(yaw)), tilt)
+
+
+def rest_heading(frames15: np.ndarray, hips_ok: bool = True, framing: str = "full", win_s: float = 0.4,
+                 max_deg: float = 60.0) -> float | None:
+    """The user's heading (rad) in the first moments after GO, when they still stand relaxed: arms down and trunk
+    upright. None when they are already moving or in a stance (then only the block's view applies)."""
+    n = max(2, int(round(win_s * FEATURE_FPS)))
+    r = np.asarray(frames15[:n], float)
+    if len(r) < 2:
+        return None
+    wrists = r[:, [J["l_wrist"], J["r_wrist"]], 1]
+    if hips_ok:
+        mh = _mid(r, "l_hip", "r_hip")
+        relaxed = bool(np.all(wrists < mh[:, None, 1] + 0.05))
+        upright = float(np.mean([_unit(v)[1] for v in _mid(r, "l_shoulder", "r_shoulder") - mh])) > np.cos(np.radians(20))
+    else:
+        ms = _mid(r, "l_shoulder", "r_shoulder")
+        relaxed, upright = bool(np.all(wrists < ms[:, None, 1] - 0.35)), True
+    if not (relaxed and upright):
+        return None
+    yaw = yaw_of(lateral(r, hips_ok).mean(0))
+    return None if abs(yaw) > np.radians(max_deg) else yaw
 
 
 def score_motor(targets: list[np.ndarray], response: ResponseInput, *, static: bool = False,
                 tolerance: Tolerance = Tolerance(), lures: list[np.ndarray] | None = None,
-                lure_static: list[bool] | None = None) -> dict:
+                lure_static: list[bool] | None = None, framing: str = "full", view: View | None = None) -> dict:
     """Score a response against the (concatenated) targets, plus optional lures.
 
     ``targets`` are 30 fps (T,19,3) arrays already mirrored if the instruction asked for it.
-    Returns ``{"target": MotorScore dict, "lures": [scores]}``.
+    ``framing`` 'upper' scores the arms and trunk only. ``view`` (from ``estimate_view``) undoes the camera's
+    angle; the user's heading at the start of the trial is corrected on top of it.
+    Returns ``{"target": MotorScore dict, "lures": [scores], "view": {...}}``.
     """
     scorer = Scorer(tolerance)
-    clean, reason = clean_response(response)
+    clean, reason, hips_ok = clean_framed(response, framing)
     if clean is None:
-        return {"target": MotorScore(score=0.0, valid=False, reason=reason).to_dict(), "lures": []}
-    resp = scorer.prepare(clean)
+        return {"target": MotorScore(score=0.0, valid=False, reason=reason).to_dict(), "lures": [], "view": None}
+    w = bone_weights(framing, hips_ok)
+    view_out = None
+    if view is not None:
+        clean = clean @ view.R.T
+        d = rest_heading(clean, hips_ok, framing)
+        if d is not None:
+            clean = clean @ rot_y(-d).T
+        view_out = {"yaw_deg": round(view.yaw_deg, 1), "rest_yaw_deg": None if d is None else round(float(np.degrees(d)), 1)}
+    upper = framing == "upper"
+    resp = scorer.prepare(clean, w)
     target_30 = np.concatenate(targets, axis=0)
-    target = scorer.prepare(resample(target_30, None, FEATURE_FPS))
+    target = scorer.prepare(resample(target_30, None, FEATURE_FPS), w)
     if static and len(targets) == 1:
         res = scorer.score_static(target, resp)
     else:
         kps, offset = [], 0
         for seg in targets:
-            kps += [offset + k for k in keypose_indices(seg)]
+            kps += [offset + k for k in keypose_indices(seg, weights=w if upper else None)]
             offset += len(resample(seg, None, FEATURE_FPS))
         kps = [min(k, len(target.dirs) - 1) for k in kps]
         res = scorer.score_dynamic(target, resp, kps)
     lure_scores = []
     for k, lure in enumerate(lures or []):
-        lp = scorer.prepare(resample(lure, None, FEATURE_FPS))
+        lp = scorer.prepare(resample(lure, None, FEATURE_FPS), w)
         st = bool(lure_static[k]) if lure_static else False
         lure_scores.append(round((scorer.score_static(lp, resp) if st else
-                                  scorer.score_dynamic(lp, resp, keypose_indices(lure))).score, 4))
-    return {"target": res.to_dict(), "lures": lure_scores}
+                                  scorer.score_dynamic(lp, resp, keypose_indices(lure, weights=w if upper else None))).score, 4))
+    return {"target": res.to_dict(), "lures": lure_scores, "view": view_out}
 
 
 def judge(target_score: float, lure_scores: list[float], threshold: float = DEFAULT_THRESHOLD,
@@ -289,4 +443,4 @@ def judge(target_score: float, lure_scores: list[float], threshold: float = DEFA
 
 
 __all__ = ["Tolerance", "Scorer", "ResponseInput", "score_motor", "judge", "keypose_indices", "bone_dirs",
-           "resample", "mirror_seq"]
+           "resample", "mirror_seq", "View", "estimate_view", "rest_heading", "bone_weights", "FRAMINGS"]
