@@ -113,3 +113,12 @@ def test_tolerance_default_unchanged(lib):
     a = score_motor([it.frames], ResponseInput(f, t))["target"]["score"]
     b = score_motor([it.frames], ResponseInput(f, t), tolerance=Tolerance(), framing="full", view=None)["target"]["score"]
     assert a == b
+
+
+def test_turn_away_judged_for_both_sides(lib):
+    from mfnb.motion.library import MotionLibrary
+    it = lib.get("pose.warrior2_l")        # one-sided, turns the trunk: also asked mirrored
+    assert it.sided and not it.stance_based
+    lo, hi = it.heading_min_deg, it.heading_max_deg
+    both = MotionLibrary.away_from_camera(it, 40)
+    assert both == pytest.approx(max(abs(40 + lo), abs(40 + hi), abs(40 - hi), abs(40 - lo)))

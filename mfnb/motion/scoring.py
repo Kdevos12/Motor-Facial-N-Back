@@ -330,7 +330,7 @@ def yaw_of(lat) -> float:
 class View:
     """Rotation taking camera-frame coordinates into the frame of the screen the user faces."""
     R: np.ndarray = field(default_factory=lambda: np.eye(3))
-    yaw_deg: float = 0.0     # how far round the camera sees the user (0 = straight in front)
+    yaw_deg: float = 0.0     # where the camera sees the user from: 0 = straight in front, > 0 = on their right
     tilt_deg: float = 0.0    # camera pitch/roll
 
     def to_dict(self) -> dict:

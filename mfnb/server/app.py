@@ -15,6 +15,7 @@ from ..face.blendshapes import DIMS as FACE_DIMS
 from ..face.blendshapes import NAMES as FACE_NAMES
 from ..face.blendshapes import REST_MEAN as FACE_REST
 from ..face.blendshapes import TYPICAL_MAX as FACE_TYPICAL_MAX
+from ..face.blendshapes import UNVERIFIED
 from ..face.expressions import FACE_CATEGORIES
 from ..motion.library import CATEGORIES
 from ..motion.skeleton import meta as skeleton_meta
@@ -42,6 +43,7 @@ class BlockIn(BaseModel):
     seed: int | None = None
     face_neutral: list | None = None   # 2 s of the user's relaxed face, taken at the camera check
     view_rest: dict | None = None      # motor: {frames, visibility} of ~2 s standing relaxed, facing the screen
+    simulated: bool = False            # demo mode: no camera, responses already in the screen's frame
 
 
 class ResponseIn(BaseModel):
@@ -165,7 +167,8 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
         excluded = store.exclusions(profile_id, "facial") if profile_id else set()
         stats = store.get_stats(profile_id, "facial") if profile_id else {}
         prof = store.get_profile(profile_id) if profile_id else None
-        playable = {it.id for it in trainer.face.filter(measured=trainer.face_calibration(prof).measured)} if prof else None
+        measured = trainer.face_calibration(prof).measured if prof else set()
+        playable = {it.id for it in trainer.face.filter(measured=measured)} if prof else None
         out = []
         for it in trainer.face.items.values():
             d = it.meta()
@@ -174,7 +177,10 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
             if playable is not None:
                 d["available"] = it.id in playable
                 if not d["available"]:
-                    d["unavailable_reason"] = "needs face calibration"
+                    missing = sorted({n[:-4] if n.endswith("Left") else n[:-5] if n.endswith("Right") else n
+                                      for n in it.shapes_needed if n in UNVERIFIED and n not in measured})
+                    d["unavailable_reason"] = ("needs face calibration" if not prof["calibration"].get("face") else
+                                               "not detected in your calibration: " + ", ".join(missing))
             out.append(d)
         return out
 
@@ -189,7 +195,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     def start_block(body: BlockIn):
         need_profile(body.profile_id)
         return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed, body.face_neutral,
-                                   body.view_rest)
+                                   body.view_rest, body.simulated)
 
     @app.get("/api/blocks/{bid}")
     def get_block(bid: int, report: bool = False):

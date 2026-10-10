@@ -14,10 +14,15 @@ export function cameraPrefs(modality) {
   return { ...DEFAULT_PREFS, ...(c || {}) };
 }
 
-// Key under which a camera's orientation (mirrored or not) is remembered.
+// Key under which a camera's orientation (mirrored or not) is remembered: its name, or 'default' for the
+// browser's default camera (the same key whether or not a camera is open, so Settings and blocks agree).
 export function cameraKey(prefs) {
-  const live = liveCamera();
-  return (prefs?.label || live.label || prefs?.deviceId || 'default').slice(0, 120);
+  return (prefs?.label || prefs?.deviceId || 'default').slice(0, 120);
+}
+
+export function trackMuted() {
+  const t = stream?.getVideoTracks()[0];
+  return !t || t.readyState !== 'live' || t.muted;
 }
 
 export function onCameraState(cb) { listeners.add(cb); return () => listeners.delete(cb); }
@@ -38,7 +43,8 @@ function describe(err, label) {
 async function open(constraints) {
   return navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, ...constraints },
+    // resizeMode 'none': the camera's own picture, not cropped to 16:9 (a phone in portrait or 4:3 keeps its frame)
+    video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, resizeMode: 'none', ...constraints },
   });
 }
 

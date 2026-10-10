@@ -8,9 +8,9 @@ import { displayFrames } from '../render/retarget.js';
 import { mirrorFrames, StickFigure } from '../render/stickman.js';
 import { refreshProfile, state } from '../state.js';
 import { h, itemLabel, mount, sleep, toast } from '../ui.js';
-import { attachVideo, onCameraState, stopCamera } from '../vision/camera.js';
+import { attachVideo, onCameraState, stopCamera, trackMuted } from '../vision/camera.js';
 import { SimFaceTracker, SimPoseTracker } from '../vision/sim.js';
-import { bodyCheck, FaceTracker, headTurnSide, PoseTracker, raisedHandSide } from '../vision/trackers.js';
+import { bodyCheck, FaceTracker, headOffset, headTurnSide, PoseTracker, raisedHandSide } from '../vision/trackers.js';
 import { cameraMirrored, cameraPicker, saveMirrored, setupAdvice, trackerOptions } from './camera_setup.js';
 import { pending } from './train.js';
 
@@ -107,7 +107,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     if (ctl.aborted) return;
     try {
       block = await api.startBlock({ profile_id: prof.id, modality, n: cfg.n, overrides: cfg.overrides,
-        face_neutral: faceNeutral, view_rest: viewRest });
+        face_neutral: faceNeutral, view_rest: viewRest, simulated: simulate });
       if (ctl.aborted) return;
       break;
     } catch (err) {
@@ -140,6 +140,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     h('button', { class: 'btn primary', onclick: async () => {
       try {
         await attachVideo(video, modality);
+        if (trackMuted()) { toast('Still no picture from the camera.', 'error'); return; }
         lostBox.hidden = true; ctl.cameraLost = false;
         if (ctl.paused) togglePause();
       } catch (err) { toast(err.message, 'error'); }
@@ -172,7 +173,11 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
 
   if (!simulate) {
     ctl.unsub.push(onCameraState((what) => {
-      if (what === 'unmuted' && ctl.cameraLost) return;
+      if (what === 'unmuted') {
+        // the picture is back by itself (stalled Wi-Fi stream): the user resumes when ready
+        if (ctl.cameraLost) { lostBox.hidden = true; ctl.cameraLost = false; }
+        return;
+      }
       if (what === 'ended' || what === 'muted') {
         ctl.cameraLost = true; lostBox.hidden = false;
         if (!ctl.paused) togglePause();
@@ -352,14 +357,17 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
     if (needSide) items.push(['side', 'Left/right check']);
     const dots = Object.fromEntries(items.map(([k]) => [k, h('span', { class: 'dot' })]));
     const startBtn = h('button', { class: 'btn primary big', disabled: !simulate, onclick: () => done(true) }, 'Start the block');
+    const SIDE_ASK = modality === 'motor' ? '✋ Raise your RIGHT hand above your head for a moment.' : '↩ Now turn your head to your LEFT for a moment, then back.';
     const sidePrompt = h('p', { class: 'notice', hidden: !needSide },
-      modality === 'motor' ? '✋ Raise your RIGHT hand above your head for a moment.' : '↩ Turn your head to your LEFT for a moment, then back.');
+      modality === 'motor' ? SIDE_ASK : 'Look straight at the screen for a moment…');
     const view = h('div', { class: 'camview' });
     if (!simulate) view.append(display, overlay);
     else view.append(overlay);
     let okSince = null;
     let sideVotes = [];
     let sideDone = !needSide;
+    let restOffs = [];
+    let rest = null;     // facial: where the head points at rest
     const unsub = ctl.tracker.onFrame((sample) => {
       let st;
       if (modality === 'motor') {
@@ -373,7 +381,16 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
         if (!simulate) drawFaceOverlay(overlay, display, sample.landmarks);
       }
       if (!sideDone) {
-        const m = modality === 'motor' ? raisedHandSide(sample) : headTurnSide(sample);
+        let m = null;
+        if (modality === 'motor') m = raisedHandSide(sample);
+        else if (rest === null) {
+          const o = headOffset(sample);
+          if (o !== null) restOffs = [...restOffs, o].slice(-15);
+          if (restOffs.length === 15 && Math.max(...restOffs) - Math.min(...restOffs) < 0.06) {
+            rest = [...restOffs].sort((a, b) => a - b)[7];
+            sidePrompt.textContent = SIDE_ASK;
+          }
+        } else m = headTurnSide(sample, rest);
         sideVotes = m === null ? sideVotes.slice(-3) : [...sideVotes, m].slice(-12);
         if (sideVotes.length >= 8 && sideVotes.every((v) => v === sideVotes[0])) {
           sideDone = true;

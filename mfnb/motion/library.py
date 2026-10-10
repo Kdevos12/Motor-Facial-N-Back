@@ -217,10 +217,11 @@ class MotionLibrary:
     def filter(self, *, categories: list[str] | None = None, complexity: tuple[int, int] = (1, 5),
                flexibility: str = "high", space: str = "small", allow_turn_away: bool = False,
                exclude: set[str] | frozenset = frozenset(), sources: list[str] | None = None,
-               framing: str = "full", camera_yaw_deg: float = 0.0) -> list[MotionItem]:
+               framing: str = "full", camera_yaw_deg: float = 0.0, stance_mirror: bool = False) -> list[MotionItem]:
         """``framing`` 'upper' keeps the moves done with the arms and trunk only. ``camera_yaw_deg`` is where the
         camera sees the user from (measured at the start of a block): 'turning the back to the camera' is judged
-        from the camera, not from the screen."""
+        from the camera, not from the screen, for every side the move can be asked on (one-sided moves are also
+        asked mirrored; stance moves follow the stance)."""
         max_fp, max_reach = SPACE_LIMITS.get(space, SPACE_LIMITS["small"])
         flex_level = FLEX.index(flexibility)
         out = []
@@ -235,7 +236,7 @@ class MotionLibrary:
                 continue
             if framing == "upper" and it.body_part != "upper":
                 continue
-            if not allow_turn_away and self.away_from_camera(it, camera_yaw_deg) > 100:
+            if not allow_turn_away and self.away_from_camera(it, camera_yaw_deg, stance_mirror) > 100:
                 continue
             if it.id in exclude:
                 continue
@@ -245,11 +246,18 @@ class MotionLibrary:
         return out
 
     @staticmethod
-    def away_from_camera(it: MotionItem, camera_yaw_deg: float = 0.0) -> float:
-        """Largest angle (deg) between the user's front and the camera during the move."""
+    def away_from_camera(it: MotionItem, camera_yaw_deg: float = 0.0, stance_mirror: bool = False) -> float:
+        """Largest angle (deg) between the user's front and the camera during the move, over the sides it can be
+        performed on. Positive camera yaw: the camera is on the user's right; positive heading: turned left."""
         lo = it.heading_min_deg if it.heading_min_deg is not None else -it.facing_away_deg
         hi = it.heading_max_deg if it.heading_max_deg is not None else it.facing_away_deg
-        return max(abs(camera_yaw_deg + lo), abs(camera_yaw_deg + hi))
+        if it.stance_based:
+            ranges = [(-hi, -lo)] if stance_mirror else [(lo, hi)]
+        elif it.sided:
+            ranges = [(lo, hi), (-hi, -lo)]
+        else:
+            ranges = [(lo, hi)]
+        return max(max(abs(camera_yaw_deg + a), abs(camera_yaw_deg + b)) for a, b in ranges)
 
     def threshold(self, item_id: str, framing: str = "full") -> float:
         it = self.items[item_id]

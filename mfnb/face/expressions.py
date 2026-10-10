@@ -136,8 +136,15 @@ EMOTIONS = [
 ]
 INCOMPATIBLE = {
     frozenset({"eyes_closed", "look_left"}), frozenset({"eyes_closed", "look_up"}), frozenset({"eyes_closed", "look_down"}),
-    frozenset({"frown_brows", "brows_raise"}),
+    frozenset({"frown_brows", "brows_raise"}), frozenset({"brow_left", "brows_raise"}),
+    frozenset({"eyes_closed", "wink_left"}),
 }
+# Atom order of the first library version: the three-part combinations are drawn from it so that the ids (and the
+# progress stored under them) of those that still exist do not change. Removed atoms are skipped.
+_V1_UPPER = ["brows_raise", "inner_brows", "frown_brows", "brow_left", "eyes_wide", "eyes_squint", "eyes_closed",
+             "wink_left"]
+_V1_LOWER = ["smile", "big_smile", "smirk_left", "mouth_frown", "pucker", "funnel", "jaw_open", "jaw_left", "mouth_left",
+             "lips_press", "lips_roll", "cheek_puff", "nose_wrinkle", "snarl_left", "grimace", "jaw_forward", "pout"]
 
 
 def _atom(a: tuple) -> tuple[str, str, dict[str, float], bool, list[list[str]]]:
@@ -188,15 +195,18 @@ def build_items(seed: int = 11, n_triples: int = 60) -> list[FaceItem]:
                               _merge(us, ls), sided, keys=_merge_keys(uk, lk)))
     rng = random.Random(seed)
     seen = set()
+    up_by_id = {a[0]: a for a in upper}
+    lo_by_id = {a[0]: a for a in lower}
     while len(seen) < n_triples:
-        u1, u2 = rng.sample(upper, 2)
-        lo = rng.choice(lower)
+        i1, i2 = rng.sample(_V1_UPPER, 2)
+        il = rng.choice(_V1_LOWER)
+        if i1 not in up_by_id or i2 not in up_by_id or il not in lo_by_id:
+            continue
+        u1, u2, lo = up_by_id[i1], up_by_id[i2], lo_by_id[il]
         key = (u1[0], u2[0], lo[0])
         if frozenset({u1[0], u2[0]}) in INCOMPATIBLE or key in seen or (u2[0], u1[0], lo[0]) in seen:
             continue
         if {u1[0], u2[0]} & {"eyes_closed", "wink_left"} and {u1[0], u2[0]} & {"eyes_squint"}:
-            continue
-        if {u1[0], u2[0]} == {"eyes_closed", "wink_left"}:
             continue
         seen.add(key)
         sided = u1[3] or u2[3] or lo[3]

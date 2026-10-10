@@ -55,7 +55,7 @@ export async function libraryView(modality) {
       h('div', { class: 'row', style: { gap: '6px' } },
         h('span', { class: 'tag' }, label(it.category)), h('span', { class: 'tag' }, `C${it.complexity}`),
         it.status === 'mastered' ? h('span', { class: 'tag mastered' }, 'mastered') : it.status === 'learning' ? h('span', { class: 'tag learning' }, 'learning') : null,
-        it.available === false ? h('span', { class: 'tag', title: it.unavailable_reason || 'hidden by your settings' }, it.unavailable_reason ? 'needs calibration' : 'filtered') : null));
+        it.available === false ? h('span', { class: 'tag', title: it.unavailable_reason || 'hidden by your settings' }, it.unavailable_reason ? (it.unavailable_reason.startsWith('not detected') ? 'not detected' : 'needs calibration') : 'filtered') : null));
   };
 
   function render(reset = true) {

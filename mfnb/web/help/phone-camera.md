@@ -51,10 +51,12 @@ cd scrcpy-linux-x86_64-v5.0.1
 ```
 
 - `./scrcpy --list-cameras` and `./scrcpy --list-camera-sizes` show what the phone offers. A 4:3 size
-  (for example `1440x1080`) or the ultra-wide camera (`--camera-id=…`) shows more of the room.
+  (for example `1440x1080`) shows more of the room, and so does the ultra-wide camera: replace
+  `--camera-facing=back` with `--camera-id=<its id>` (the two options cannot be combined).
 - Leave this terminal open while you train. If scrcpy stops, the app pauses the block: start it again, then
   click *Resume*.
-- Without the cable (after a first USB connection): add `--tcpip`. It adds a little delay.
+- Without the cable: run the command once with `--tcpip` while the phone is plugged in, then unplug it. On
+  later days use `--tcpip=<phone IP address>` (or plug it in again first). Wi-Fi adds a little delay.
 
 **5. In the app:** Settings → Cameras → *Moves (body)* → choose **Phone (scrcpy)**. If the phone stands in
 portrait and the picture is sideways, choose *Rotate 90°* there (or add `--capture-orientation=90` to the
@@ -88,6 +90,6 @@ back if the picture is mirrored.
   stance: the fighting stance then turns you toward it.
 - Camera around chest-to-hip height, not tilted much.
 - Whole body: about 1.7 m from a phone in portrait (2.8 m from a laptop webcam). Upper body: 1.2–1.5 m
-  (1.5–2 m), with room above your raised hands.
+  (2–2.5 m), with room above your raised hands.
 - Training with your back to the camera is not supported: moves that would turn your back to it are left out,
   judged from where the camera actually is.

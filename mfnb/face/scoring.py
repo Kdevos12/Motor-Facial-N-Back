@@ -46,7 +46,10 @@ class FaceCalibration:
     neutral: np.ndarray | None = None    # (D,) resting face
     deadzone: np.ndarray | None = None   # (D,) resting jitter subtracted before comparing
     rise: np.ndarray | None = None       # (D,) measured maximum rise above neutral, NaN where not measured
-    lr_swap: bool = False                # the camera feed is mirrored relative to the user's anatomy
+    # Left/right: the browser swaps a mirrored camera's picture back (one check per camera), so frames reaching
+    # the server are always in the user's own left/right. A stored lr_swap from older versions is ignored.
+    lr_swap: bool = False
+    peak: np.ndarray | None = None       # (D,) calibrated maximum (neutral + rise) once another neutral is in use
 
     @classmethod
     def from_dict(cls, d: dict | None) -> "FaceCalibration":
@@ -56,13 +59,13 @@ class FaceCalibration:
         def arr(k):
             v = d.get(k)
             return None if v is None else np.array([np.nan if x is None else x for x in v], float)
-        return cls(neutral=arr("neutral"), deadzone=arr("deadzone"), rise=arr("rise"), lr_swap=bool(d.get("lr_swap", False)))
+        return cls(neutral=arr("neutral"), deadzone=arr("deadzone"), rise=arr("rise"))
 
     def to_dict(self) -> dict:
         def out(v):
             return None if v is None else [None if not np.isfinite(x) else round(float(x), 4) for x in v]
         return {"neutral": out(self.neutral), "deadzone": out(self.deadzone), "rise": out(self.rise),
-                "lr_swap": self.lr_swap, "measured": sorted(self.measured)}
+                "lr_swap": False, "measured": sorted(self.measured)}
 
     @property
     def measured(self) -> set[str]:
@@ -71,9 +74,13 @@ class FaceCalibration:
         return {DIMS[k] for k in np.nonzero(np.isfinite(self.rise))[0]}
 
     def with_neutral(self, neutral: np.ndarray | None, deadzone: np.ndarray | None) -> "FaceCalibration":
+        """Today's resting face; the calibrated maxima keep their level (what the face reaches), not their rise."""
         if neutral is None:
             return self
-        return FaceCalibration(neutral=neutral, deadzone=deadzone, rise=self.rise, lr_swap=self.lr_swap)
+        peak = None
+        if self.rise is not None:
+            peak = self.peak if self.peak is not None else self.rise + self.rest
+        return FaceCalibration(neutral=neutral, deadzone=deadzone, rise=self.rise, peak=peak)
 
     # -- derived quantities ---------------------------------------------------------------------------------
     @property
@@ -90,7 +97,8 @@ class FaceCalibration:
         prior = np.maximum(TYPICAL_MAX - self.rest, 0.0)
         if self.rise is None:
             return prior
-        return np.where(np.isfinite(self.rise), self.rise, prior)
+        mine = self.rise if self.peak is None else np.maximum(self.peak - self.rest, 0.0)
+        return np.where(np.isfinite(mine), mine, prior)
 
     def response(self, frames: np.ndarray) -> np.ndarray:
         """Raw shapes -> rise above the resting face, resting jitter removed."""
@@ -102,12 +110,18 @@ class FaceCalibration:
         return np.clip(x / np.maximum(self.range, MIN_RANGE), 0.0, 1.0)
 
 
+# Shapes a 'neutral' capture may show only because the user was not relaxed (smiling, mouth open, brows up). Other
+# shapes (brows down, eyelids, squint, gaze) can genuinely rest high, e.g. looking down at a screen.
+_EXPRESSIVE = np.array([n.startswith(("mouth", "jaw", "browInnerUp", "browOuterUp", "eyeWide")) for n in DIMS])
+
+
 def neutral_from_frames(frames: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """(T, D) raw frames of a relaxed face -> (neutral, deadzone). A face that is not relaxed (smiling, mouth open...)
-    is clipped to the upper end of real resting faces, so it cannot hide a later expression."""
+    """(T, D) raw frames of a relaxed face -> (neutral, deadzone). Expression shapes of a face that is not relaxed
+    (smiling, mouth open...) are clipped to the upper end of real resting faces, so they cannot hide a later
+    expression."""
     f = np.asarray(frames, float)
     neutral = np.median(f, axis=0)
-    neutral = np.minimum(neutral, np.maximum(REST_P90 + 0.1, 0.15))
+    neutral = np.where(_EXPRESSIVE, np.minimum(neutral, np.maximum(REST_P90 + 0.1, 0.15)), neutral)
     deadzone = np.maximum(np.percentile(f, 90, axis=0) - np.percentile(f, 50, axis=0), MIN_DEADZONE)
     return neutral, np.minimum(deadzone, 0.12)
 
@@ -203,16 +217,18 @@ def _part_name(ks: list[int]) -> str:
 
 
 class _Windows:
-    """Moving 0.5-s averages of one response, shared by the target and the lures."""
+    """Moving 0.5-s windows of one response, shared by the target and the lures: the mean for the resemblance, a
+    low percentile for the key parts (they must be held for most of the window, a blink does not count)."""
 
     def __init__(self, frames: np.ndarray, times: np.ndarray, calib: FaceCalibration, hold_s: float):
         fps = (len(times) - 1) / max(times[-1] - times[0], 1e-6)
         self.win = max(1, min(len(frames), int(round(hold_s * fps))))
         c = np.cumsum(np.vstack([np.zeros((1, frames.shape[1])), frames]), axis=0)
         self.seg = (c[self.win:] - c[:-self.win]) / self.win          # (W, D) averaged raw shapes
+        held = np.percentile(np.lib.stride_tricks.sliding_window_view(frames, self.win, axis=0), 25, axis=-1)
         self.times = times
         self.x = calib.response(self.seg)
-        self.a = calib.fraction(self.seg)
+        self.a = calib.fraction(held)
         self.calib = calib
 
     def score(self, target: FaceTarget, threshold: float, gamma: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

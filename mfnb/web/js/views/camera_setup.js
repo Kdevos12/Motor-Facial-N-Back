@@ -37,13 +37,14 @@ async function savePrefs(modality, patch) {
 
 // <select> of cameras + rotation. onChange(prefs) runs after the choice is saved.
 export function cameraPicker(modality, onChange) {
-  const prefs = cameraPrefs(modality);
+  let prefs = cameraPrefs(modality);
   const sel = h('select', { 'aria-label': 'Camera' }, h('option', { value: '' }, 'Automatic (default camera)'));
   const rot = h('select', { 'aria-label': 'Rotation' },
     [[0, 'Upright'], [90, 'Rotate 90° ↻'], [180, 'Upside down'], [270, 'Rotate 90° ↺']].map(([v, l]) =>
       h('option', { value: v, selected: Number(prefs.rotate || 0) === v }, l)));
   const note = h('span', { class: 'small muted' });
   const fill = async (ask = false) => {
+    prefs = cameraPrefs(modality);
     let cams = [];
     try { cams = await listCameras(ask === true); } catch { /* no camera API */ }
     const live = liveCamera();
@@ -81,7 +82,7 @@ export function setupAdvice(modality, framing, stance) {
   const side = stance === 'southpaw' ? 'front-left' : 'front-right';
   const where = `Face the SCREEN during the whole block, even if the camera is to one side. If the camera is not in front of you, put it ${side} of you (your ${stance} stance then turns you toward it), within 45°.`;
   return framing === 'upper'
-    ? `Upper body: head to mid-thigh in view, with room above your raised hands (sitting is fine). About 1.2–1.5 m from a phone in portrait, 1.5–2 m from a laptop webcam. ${where}`
+    ? `Upper body: head to mid-thigh in view, with room above your raised hands (sitting is fine). About 1.2–1.5 m from a phone in portrait, 2–2.5 m from a laptop webcam. ${where}`
     : `Whole body: head to feet in view. About 1.7 m from a phone in portrait, 2.8 m from a laptop webcam; camera around hip height. Clear about 1.5 × 1.5 m. ${where}`;
 }
 

@@ -3,8 +3,8 @@ let ctx = null;
 let enabled = true;
 export function setSound(on) { enabled = on; }
 function ac() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); return ctx; }
-export function beep(freq = 660, ms = 120, vol = 0.12) {
-  if (!enabled) return;
+export function beep(freq = 660, ms = 120, vol = 0.12, force = false) {
+  if (!enabled && !force) return;
   try {
     const a = ac();
     const o = a.createOscillator(); const g = a.createGain();
@@ -19,4 +19,6 @@ export const cue = {
   go: () => beep(880, 180),
   good: () => beep(990, 110, 0.08),
   bad: () => beep(300, 160, 0.08),
+  // a signal the user waits for with eyes closed: played even when sound cues are off
+  signal: () => beep(700, 260, 0.15, true),
 };

@@ -156,10 +156,16 @@ export function bodyCheck(sample, framing = 'full') {
   const full = need.every((k) => (vis[k] ?? 0) > 0.5);
   let centered = true;
   if (sample.image) {
-    const pts = framing === 'upper' ? [0, 11, 12, 13, 14, 15, 16].map((k) => sample.image[k]) : sample.image;
+    const img = sample.image;
+    const pts = framing === 'upper' ? [0, 11, 12, 13, 14, 15, 16].map((k) => img[k]) : img;
     const xs = pts.map((p) => p.x);
     const ys = pts.map((p) => p.y);
-    centered = Math.min(...xs) > 0.02 && Math.max(...xs) < 0.98 && Math.min(...ys) > (framing === 'upper' ? 0.06 : 0.0) && Math.max(...ys) < 1.0;
+    centered = Math.min(...xs) > 0.02 && Math.max(...xs) < 0.98 && Math.min(...ys) > 0.0 && Math.max(...ys) < 1.0;
+    if (framing === 'upper' && img[0] && img[11] && img[12]) {
+      // room above the head for raised hands: about 1.3 x the nose-to-shoulders height
+      const neck = (img[11].y + img[12].y) / 2 - img[0].y;
+      centered = centered && img[0].y - 1.3 * Math.max(neck, 0) > 0.0;
+    }
   }
   return { person: true, full, centered };
 }
@@ -181,14 +187,20 @@ export function raisedHandSide(sample) {
   return hand.x > mid;   // in the camera's own picture
 }
 
-export function headTurnSide(sample) {
-  // the user turns their head to their LEFT: unmirrored, the nose moves toward the image's right
+// Nose position across the face (image geometry): 0 = centred, > 0 = toward the image's right.
+export function headOffset(sample) {
   const lm = sample?.landmarks;
   if (!lm || !lm[1] || !lm[234] || !lm[454]) return null;
   const left = Math.min(lm[234].x, lm[454].x); const right = Math.max(lm[234].x, lm[454].x);
   const width = right - left;
-  if (width <= 0) return null;
-  const off = (lm[1].x - (left + right) / 2) / width;
-  if (Math.abs(off) < 0.15) return null;
-  return off < 0;
+  return width > 0 ? (lm[1].x - (left + right) / 2) / width : null;
+}
+
+export function headTurnSide(sample, rest) {
+  // the user turns their head to their LEFT: unmirrored, the nose moves toward the image's right. Measured from
+  // where the head pointed at rest, so a camera off to one side does not decide it.
+  const off = headOffset(sample);
+  if (off === null || rest === null || rest === undefined) return null;
+  const d = off - rest;
+  return Math.abs(d) < 0.15 ? null : d < 0;
 }

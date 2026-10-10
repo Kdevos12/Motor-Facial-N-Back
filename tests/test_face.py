@@ -129,3 +129,48 @@ def test_neutral_from_frames_clips_a_non_relaxed_face():
     f[:, IDX["mouthSmileLeft"]] = f[:, IDX["mouthSmileRight"]] = 0.8     # smiling during the neutral capture
     n, dz = neutral_from_frames(f)
     assert n[IDX["mouthSmileLeft"]] < 0.3 and (dz >= 0.03).all()
+
+
+def test_a_blink_is_not_closed_eyes(lib):
+    rng = np.random.default_rng(7)
+    cal = calib(rng)
+    f = synth_face_neutral(rng, seconds=3.0)
+    f[40:46, IDX["eyeBlinkLeft"]] = f[40:46, IDX["eyeBlinkRight"]] = 0.85    # a 0.2 s blink
+    t = np.arange(len(f)) / 30
+    assert score(lib, "face.eyes_closed", f, t, cal)["score"] < 0.60
+
+
+def test_calibrated_maximum_keeps_its_level_with_another_neutral():
+    from mfnb.face.blendshapes import TYPICAL_MAX
+    rise = np.full(D, np.nan)
+    rise[IDX["browDownLeft"]] = rise[IDX["browDownRight"]] = 0.45
+    base = FaceCalibration(neutral=np.array(FaceCalibration().rest), rise=rise)
+    today = np.array(base.rest)
+    today[IDX["browDownLeft"]] = today[IDX["browDownRight"]] = base.rest[IDX["browDownLeft"]] + 0.3   # higher camera
+    cal = base.with_neutral(today, None)
+    k = IDX["browDownLeft"]
+    assert cal.range[k] == pytest.approx(0.45 - 0.3, abs=1e-6)
+    assert np.isnan(rise[IDX["jawOpen"]]) and cal.range[IDX["jawOpen"]] == pytest.approx(
+        max(TYPICAL_MAX[IDX["jawOpen"]] - today[IDX["jawOpen"]], 0))
+
+
+def test_high_resting_brows_are_not_clipped():
+    rng = np.random.default_rng(8)
+    f = synth_face_neutral(rng)
+    f[:, IDX["browDownLeft"]] = f[:, IDX["browDownRight"]] = 0.75     # brows that rest low (anatomy, camera angle)
+    n, _ = neutral_from_frames(f)
+    assert n[IDX["browDownLeft"]] > 0.7
+    lib = get_face_library()
+    t = np.arange(len(f)) / 30
+    assert score(lib, "face.frown_brows", f, t, FaceCalibration(neutral=n))["score"] < 0.60
+
+
+def test_legacy_lr_swap_is_ignored():
+    cal = FaceCalibration.from_dict({"neutral": [0.0] * D, "lr_swap": True})
+    assert cal.lr_swap is False
+
+
+def test_no_contradictory_combinations(lib):
+    for it in lib.items.values():
+        parts = it.id.split(".", 1)[1].split("+")
+        assert not ({"brow_left", "brows_raise"} <= set(parts)) and not ({"eyes_closed", "wink_left"} <= set(parts)), it.id
