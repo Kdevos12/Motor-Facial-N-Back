@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 from .. import __version__, assets, config
 from ..face.blendshapes import DIMS as FACE_DIMS
 from ..face.blendshapes import NAMES as FACE_NAMES
+from ..face.blendshapes import REST_MEAN as FACE_REST
+from ..face.blendshapes import TYPICAL_MAX as FACE_TYPICAL_MAX
 from ..face.expressions import FACE_CATEGORIES
 from ..motion.library import CATEGORIES
 from ..motion.skeleton import meta as skeleton_meta
@@ -38,6 +40,7 @@ class BlockIn(BaseModel):
     n: int | None = None
     overrides: dict[str, Any] | None = None
     seed: int | None = None
+    face_neutral: list | None = None   # 2 s of the user's relaxed face, taken at the camera check
 
 
 class ResponseIn(BaseModel):
@@ -81,6 +84,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     def meta():
         return {"version": __version__, "skeleton": skeleton_meta(), "motor_categories": CATEGORIES,
                 "face_categories": FACE_CATEGORIES, "face_names": FACE_NAMES, "face_dims": FACE_DIMS,
+                "face_typical_max": np.round(FACE_TYPICAL_MAX, 3).tolist(), "face_rest": np.round(FACE_REST, 3).tolist(),
                 "default_settings": config.DEFAULT_SETTINGS,
                 "library": {"motor": trainer.motor.stats(), "facial": trainer.face.stats()}}
 
@@ -158,11 +162,17 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     def face_library(profile_id: int | None = None):
         excluded = store.exclusions(profile_id, "facial") if profile_id else set()
         stats = store.get_stats(profile_id, "facial") if profile_id else {}
+        prof = store.get_profile(profile_id) if profile_id else None
+        playable = {it.id for it in trainer.face.filter(measured=trainer.face_calibration(prof).measured)} if prof else None
         out = []
         for it in trainer.face.items.values():
             d = it.meta()
             d["excluded"] = it.id in excluded
             d["status"] = (stats.get(it.id) or {}).get("status", "new")
+            if playable is not None:
+                d["available"] = it.id in playable
+                if not d["available"]:
+                    d["unavailable_reason"] = "needs face calibration"
             out.append(d)
         return out
 
@@ -176,7 +186,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     @app.post("/api/blocks")
     def start_block(body: BlockIn):
         need_profile(body.profile_id)
-        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed)
+        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed, body.face_neutral)
 
     @app.get("/api/blocks/{bid}")
     def get_block(bid: int, report: bool = False):

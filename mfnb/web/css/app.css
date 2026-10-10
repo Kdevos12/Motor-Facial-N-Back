@@ -181,3 +181,6 @@ canvas.face { width: min(70vh, 640px); aspect-ratio: 1/1; }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--panel-2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 kbd { background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; padding: 1px 6px; border-radius: 5px; font-size: .85em; }
+.notice { background: #1d2540; border: 1px solid #34407a; border-radius: 9px; padding: 9px 12px; }
+.notice.warn { background: #3a2f17; border-color: #6b5a1f; }
+.steps { color: var(--muted); font-size: .85rem; }

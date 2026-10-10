@@ -40,15 +40,30 @@ def synth_response(target: np.ndarray, rng: np.random.Generator, *, fps: float =
     return frames, times
 
 
-def synth_face_response(target: np.ndarray, rng: np.random.Generator, *, fps: float = 30.0, gain_spread: float = 0.25,
-                        noise: float = 0.04, idle_before: float = 1.0, hold: float = 1.2,
-                        idle_after: float = 1.0, crosstalk: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
-    """A person producing a facial expression: neutral, ramp, hold, release (raw 51-dim shapes)."""
+def synth_face_response(target: np.ndarray, rng: np.random.Generator, *, fps: float = 30.0,
+                        effort: tuple[float, float] = (0.6, 1.0), rest: np.ndarray | None = None, noise: float = 0.03,
+                        idle_before: float = 1.0, hold: float = 1.2, idle_after: float = 1.0,
+                        crosstalk: float = 0.04) -> tuple[np.ndarray, np.ndarray]:
+    """A person producing a facial expression as MediaPipe would report it (raw 51-dim shapes): their resting face,
+    then a ramp to ``target`` (intent units, 0..1 of a full effort) at a personal effort per shape, hold, release.
+    Shapes the tracker never outputs stay at 0 and each shape tops out at its typical real maximum."""
+    from ..face.blendshapes import DEAD_MASK, REST_MEAN, TYPICAL_MAX
     t = np.asarray(target, dtype=float)
-    gains = np.clip(rng.normal(1.0, gain_spread, t.shape), 0.4, 1.4)
-    peak = np.clip(t * gains + np.abs(rng.normal(0, crosstalk, t.shape)), 0, 1)
+    base = REST_MEAN if rest is None else np.asarray(rest, float)
+    eff = rng.uniform(effort[0], effort[1], t.shape)
+    peak = base + t * eff * np.maximum(TYPICAL_MAX - base, 0) + np.abs(rng.normal(0, crosstalk, t.shape))
     ramp = int(0.3 * fps)
     env = np.concatenate([np.zeros(int(idle_before * fps)), np.linspace(0, 1, ramp), np.ones(int(hold * fps)),
                           np.linspace(1, 0, ramp), np.zeros(int(idle_after * fps))])
-    frames = np.clip(env[:, None] * peak[None, :] + np.abs(rng.normal(0, noise, (len(env), len(t)))), 0, 1)
+    frames = base + env[:, None] * (peak - base)[None, :] + rng.normal(0, noise, (len(env), len(t)))
+    frames = np.where(DEAD_MASK, 0.0, np.clip(frames, 0, 1))
     return frames, np.arange(len(env)) / fps
+
+
+def synth_face_neutral(rng: np.random.Generator, rest: np.ndarray | None = None, seconds: float = 2.0,
+                       fps: float = 30.0, noise: float = 0.03) -> np.ndarray:
+    """A relaxed face held still (raw 51-dim shapes)."""
+    from ..face.blendshapes import DEAD_MASK, REST_MEAN
+    base = REST_MEAN if rest is None else np.asarray(rest, float)
+    f = base + rng.normal(0, noise, (int(seconds * fps), len(base)))
+    return np.where(DEAD_MASK, 0.0, np.clip(f, 0, 1))

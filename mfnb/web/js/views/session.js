@@ -7,7 +7,7 @@ import { drawFaceOverlay, drawPoseOverlay } from '../render/overlay.js';
 import { displayFrames } from '../render/retarget.js';
 import { mirrorFrames, StickFigure } from '../render/stickman.js';
 import { refreshProfile, state } from '../state.js';
-import { h, mount, sleep, toast } from '../ui.js';
+import { h, itemLabel, mount, sleep, toast } from '../ui.js';
 import { attachVideo, stopCamera } from '../vision/camera.js';
 import { SimFaceTracker, SimPoseTracker } from '../vision/sim.js';
 import { bodyCheck, FaceTracker, PoseTracker } from '../vision/trackers.js';
@@ -68,7 +68,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
         const rest = (await api.motorItem('pose.t_pose')).frames[0];
         ctl.tracker = new SimPoseTracker(rest);
       } else {
-        ctl.tracker = new SimFaceTracker(state.meta.face_names);
+        ctl.tracker = new SimFaceTracker(state.meta.face_names, { typicalMax: state.meta.face_typical_max, rest: state.meta.face_rest });
       }
     } else {
       await attachVideo(video);
@@ -89,13 +89,16 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   }
 
   // ---- camera check --------------------------------------------------------------
-  const ready = await cameraCheck(modality, ctl, video, overlay, simulate);
+  const ready = await cameraCheck(modality, ctl, video, overlay, simulate, prof);
   if (!ready || ctl.aborted) return;
+  // facial: the resting face of today (light, camera and posture change between sessions)
+  const faceNeutral = modality === 'facial' ? await captureNeutral(ctl) : null;
+  if (ctl.aborted) return;
 
   // ---- block ---------------------------------------------------------------------
   let block;
   try {
-    block = await api.startBlock({ profile_id: prof.id, modality, n: cfg.n, overrides: cfg.overrides });
+    block = await api.startBlock({ profile_id: prof.id, modality, n: cfg.n, overrides: cfg.overrides, face_neutral: faceNeutral });
     if (ctl.aborted) return;
   } catch (err) {
     toast(err.message, 'error');
@@ -192,7 +195,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     phase.textContent = 'watch';
     setInstr('');
     selfview.hidden = true;
-    nameTag.textContent = s.show_names ? `${items[trial.item_id].name}${trial.shown_mirrored && modality === 'motor' ? ' (other side)' : ''}` : '';
+    nameTag.textContent = s.show_names ? itemLabel(items[trial.item_id].name, trial.shown_mirrored, modality) : '';
     await showItem(trial.item_id, trial.shown_mirrored);
     if (ctl.aborted) break;
     nameTag.textContent = '';
@@ -267,8 +270,26 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   }
 }
 
+// 2 s of the relaxed face; returns the frames or null when the face was not tracked.
+async function captureNeutral(ctl) {
+  const avatarCanvas = h('canvas', { class: 'face', style: { width: '200px', height: '200px' } });
+  const msg = h('h2', {}, 'Relax your face and look at the screen');
+  const sub = h('p', { class: 'muted' }, 'This records your resting face so each expression is judged from it.');
+  mount(h('div', { class: 'center stack', style: { padding: '40px', textAlign: 'center' } }, avatarCanvas, msg, sub));
+  new FaceAvatar(avatarCanvas, { view: 'mirror' }).draw({});
+  for (let attempt = 0; attempt < 2 && !ctl.aborted; attempt++) {
+    for (const k of ['3', '2', '1']) { if (ctl.aborted) return null; sub.textContent = `Hold a neutral face… ${k}`; await sleep(600); }
+    sub.textContent = 'Recording… keep still';
+    const rec = await ctl.tracker.record(2);
+    if (rec.frames.length >= 20) return rec.frames;
+    msg.textContent = 'Your face was not tracked — move closer to the camera, light on your face';
+    await sleep(1500);
+  }
+  return null;
+}
+
 // Returns true when the user is in frame and clicked start.
-function cameraCheck(modality, ctl, video, overlay, simulate) {
+function cameraCheck(modality, ctl, video, overlay, simulate, prof) {
   return new Promise((resolve) => {
     const items = modality === 'motor'
       ? [['person', 'Person detected'], ['full', 'Whole body visible (head to feet)'], ['centered', 'Inside the frame']]
@@ -305,7 +326,11 @@ function cameraCheck(modality, ctl, video, overlay, simulate) {
           h('ul', { class: 'checklist' }, items.map(([k, label]) => h('li', {}, dots[k], label))),
           modality === 'motor'
             ? h('p', { class: 'muted small' }, 'Stand 2–3 m from the camera, camera around hip height, feet visible. Clear about 1.5 × 1.5 m around you.')
-            : h('p', { class: 'muted small' }, 'Sit close to the camera, face the screen, light on your face (not behind you).'),
+            : h('p', { class: 'muted small' }, 'Sit close to the camera, face the screen, light on your face (not behind you). After Start you will hold a relaxed face for 2 seconds.'),
+          modality === 'facial' && !(prof.calibration || {}).face
+            ? h('p', { class: 'small notice' }, 'Tip: the face calibration (about a minute, in Settings) fits the scoring to your face and unlocks the mouth movements (jaw and mouth sideways, pressed or rolled lips, O lips, corners down). ',
+              h('a', { href: '#/calibrate/face' }, 'Calibrate now'))
+            : null,
           h('div', { class: 'row' }, startBtn, h('button', { class: 'btn ghost', onclick: () => done(true) }, 'Start anyway')),
           h('a', { class: 'btn ghost', href: `#/train/${modality}` }, '← Back')))));
   });

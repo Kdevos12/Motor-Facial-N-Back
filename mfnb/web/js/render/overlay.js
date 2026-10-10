@@ -1,4 +1,5 @@
 // Draws the tracked skeleton over the webcam video (normalized image landmarks).
+// `video` is the element the tracker reads: a <video>, or the canvas holding the rotated picture.
 import { COLORS } from './stickman.js';
 
 const MP_PAIRS = [[11, 12, 'c'], [23, 24, 'c'], [11, 23, 'c'], [12, 24, 'c'],
@@ -7,7 +8,7 @@ const MP_PAIRS = [[11, 12, 'c'], [23, 24, 'c'], [11, 23, 'c'], [12, 24, 'c'],
 
 export function drawPoseOverlay(canvas, video, image) {
   const ctx = canvas.getContext('2d');
-  const w = video.videoWidth || 640; const hgt = video.videoHeight || 480;
+  const w = video.videoWidth || video.width || 640; const hgt = video.videoHeight || video.height || 480;
   if (canvas.width !== w || canvas.height !== hgt) { canvas.width = w; canvas.height = hgt; }
   ctx.clearRect(0, 0, w, hgt);
   if (!image) return;
@@ -25,7 +26,7 @@ export function drawPoseOverlay(canvas, video, image) {
 
 export function drawFaceOverlay(canvas, video, landmarks) {
   const ctx = canvas.getContext('2d');
-  const w = video.videoWidth || 640; const hgt = video.videoHeight || 480;
+  const w = video.videoWidth || video.width || 640; const hgt = video.videoHeight || video.height || 480;
   if (canvas.width !== w || canvas.height !== hgt) { canvas.width = w; canvas.height = hgt; }
   ctx.clearRect(0, 0, w, hgt);
   if (!landmarks) return;

@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from mfnb.server.app import create_app
-from mfnb.sim import synth_face_response, synth_response
+from mfnb.sim import synth_face_neutral, synth_face_response, synth_response
 from mfnb.storage.db import Store
 
 
@@ -100,8 +100,10 @@ def test_too_narrow_filters_rejected(client):
 
 def test_facial_block_and_dashboard(client):
     p = make_profile(client)
-    block = client.post("/api/blocks", json={"profile_id": p["id"], "modality": "facial", "n": 1, "seed": 5}).json()
     rng = np.random.default_rng(0)
+    block = client.post("/api/blocks", json={"profile_id": p["id"], "modality": "facial", "n": 1, "seed": 5,
+                                             "face_neutral": synth_face_neutral(rng).tolist()}).json()
+    assert all(not i.startswith("face.jaw_left") for i in block["items"])    # needs a face calibration first
     from mfnb.face.blendshapes import mirror_vec, vec
     for tr in block["trials"]:
         if tr["watch_only"]:
@@ -128,13 +130,23 @@ def test_body_and_face_calibration(client):
     frames = get_library().get("pose.t_pose").frames[-20:]
     dims = client.put(f"/api/profiles/{p['id']}/calibration/body", json={"frames": frames.tolist()}).json()
     assert dims["upper_arm"] == pytest.approx(0.29, abs=0.01)
-    neutral = np.zeros((20, 52))
-    wink = np.zeros((20, 52))
-    wink[:, 1 + 9] = 0.9  # MediaPipe reports eyeBlinkRight (index 10 in NAMES) when the user winks left
+    from mfnb.face.blendshapes import IDX
+    rng = np.random.default_rng(1)
+    neutral = synth_face_neutral(rng)
+    wink = neutral.copy()
+    wink[:, IDX["eyeBlinkRight"]] = 0.7   # a mirrored camera feed: the left wink shows up on the right eye
+    jaw = neutral.copy()
+    jaw[:, IDX["jawRight"]] = 0.35        # same feed: the jaw moved to the user's left
+    smile = neutral.copy()
+    smile[:, IDX["mouthSmileLeft"]] = smile[:, IDX["mouthSmileRight"]] = 0.12   # barely moved: not measured
     cal = client.put(f"/api/profiles/{p['id']}/calibration/face",
                      json={"neutral": neutral.tolist(), "wink_left": wink.tolist(),
-                           "prompts": {"smile": (np.full((20, 52), 0.4)).tolist()}}).json()
-    assert cal["lr_swap"] is True and max(cal["gain"]) > 1.5
+                           "prompts": {"jaw_left": jaw.tolist(), "smile": smile.tolist()}}).json()
+    assert cal["lr_swap"] is True and cal["side_check"] == "mirrored"
+    # one-sided prompt: the other side is assumed to move as far
+    assert set(cal["measured"]) == {"jawLeft", "jawRight"}
+    lib = {i["id"]: i for i in client.get(f"/api/library/facial?profile_id={p['id']}").json()}
+    assert lib["face.jaw_left"]["available"] and not lib["face.lips_press"]["available"]
 
 
 def test_library_endpoints_and_exclusions(client):

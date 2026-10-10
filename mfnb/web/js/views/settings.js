@@ -1,6 +1,6 @@
 // Profile settings and calibration flows.
 import { api } from '../api.js';
-import { setSound } from '../audio.js';
+import { cue, setSound } from '../audio.js';
 import { navigate, renderProfileSwitch } from '../main.js';
 import { FaceAvatar } from '../render/face.js';
 import { drawFaceOverlay, drawPoseOverlay } from '../render/overlay.js';
@@ -70,9 +70,9 @@ export async function settingsView() {
         h('div', { class: 'field' }, h('label', {}, 'Strictness'), range('strictness', 0.7, 1.3, 0.05, (v) => (v < 0.9 ? `lenient (${v.toFixed(2)})` : v > 1.1 ? `strict (${v.toFixed(2)})` : `normal (${v.toFixed(2)})`))),
         h('div', { class: 'field' }, h('label', {}, 'Times each stimulus is shown'), segmented([[1, 'Once'], [2, 'Twice']], s.stimulus_repeats, (v) => save({ stimulus_repeats: v })))),
       h('div', { class: 'card stack' }, h('h3', {}, 'Face'),
-        h('p', { class: 'muted small' }, 'Facial calibration records your resting face and how strongly you can smile, raise your brows, etc., so expressions are judged relative to you.'),
+        h('p', { class: 'muted small' }, 'Facial calibration (about a minute) measures how far each movement goes on your face, so expressions are judged relative to you, and unlocks the mouth movements the tracker can see on your face. Your resting face is also recorded at the start of each facial block.'),
         h('div', { class: 'row' }, h('a', { class: 'btn', href: '#/calibrate/face' }, cal.face ? 'Recalibrate face' : 'Calibrate face'),
-          h('span', { class: 'small muted' }, cal.face ? 'calibrated' : 'not calibrated yet')),
+          h('span', { class: 'small muted' }, cal.face ? `calibrated · ${(cal.face.measured || []).length} movements measured${cal.face.lr_swap ? ' · mirrored camera' : ''}` : 'not calibrated yet')),
         h('h3', {}, 'Profile'),
         h('div', { class: 'row' }, nameInput, h('button', { class: 'btn', onclick: async () => {
           const p = await api.patchProfile(prof.id, { name: nameInput.value.trim() || prof.name });
@@ -108,7 +108,7 @@ export async function calibrateView(kind) {
   (async () => {
     try {
       if (simulate) {
-        ctl.tracker = kind === 'body' ? new SimPoseTracker((await api.motorItem('pose.t_pose')).frames[0]) : new SimFaceTracker(state.meta.face_names);
+        ctl.tracker = kind === 'body' ? new SimPoseTracker((await api.motorItem('pose.t_pose')).frames[0]) : new SimFaceTracker(state.meta.face_names, { typicalMax: state.meta.face_typical_max, rest: state.meta.face_rest });
       } else {
         await attachVideo(video);
         ctl.tracker = kind === 'body' ? new PoseTracker(video) : new FaceTracker(video);
@@ -141,36 +141,63 @@ export async function calibrateView(kind) {
         status.textContent = `Measured: upper arm ${Math.round(dims.upper_arm * 100)} cm, forearm ${Math.round(dims.forearm * 100)} cm, thigh ${Math.round(dims.thigh * 100)} cm, shin ${Math.round(dims.shin * 100)} cm.`;
       } catch (err) { status.textContent = err.message; return; }
     } else {
+      // [key, instruction, avatar shapes]; the first three set the reference and the left/right check
       const prompts = [
-        ['neutral', 'Relax your face (neutral)', {}],
+        ['neutral', 'Relax your face (neutral), look at the screen', {}],
+        ['wink_left', 'Wink with your LEFT eye (close only that one)', { eyeBlinkLeft: 0.95, cheekSquintLeft: 0.3 }],
         ['smile', 'Smile as wide as you can', { mouthSmileLeft: 0.9, mouthSmileRight: 0.9, cheekSquintLeft: 0.5, cheekSquintRight: 0.5 }],
         ['brows_up', 'Raise your eyebrows as high as you can', { browInnerUp: 0.9, browOuterUpLeft: 0.9, browOuterUpRight: 0.9 }],
-        ['frown', 'Frown hard', { browDownLeft: 0.9, browDownRight: 0.9 }],
-        ['jaw_open', 'Open your mouth wide', { jawOpen: 0.9 }],
+        ['frown', 'Frown: pull your eyebrows down', { browDownLeft: 0.9, browDownRight: 0.9 }],
+        ['eyes_closed', 'Close both eyes (open them when you hear the beep)', { eyeBlinkLeft: 0.95, eyeBlinkRight: 0.95 }],
+        ['jaw_open', 'Open your mouth wide', { jawOpen: 0.9, mouthLowerDownLeft: 0.3, mouthLowerDownRight: 0.3 }],
         ['pucker', 'Pucker your lips (kiss)', { mouthPucker: 0.9 }],
-        ['wink_left', 'Wink with your LEFT eye', { eyeBlinkLeft: 0.95 }],
+        ['upper_lip', 'Wrinkle your nose and lift your upper lip', { noseSneerLeft: 0.7, noseSneerRight: 0.7, mouthUpperUpLeft: 0.7, mouthUpperUpRight: 0.7 }],
+        ['mouth_frown', 'Pull the corners of your mouth down', { mouthFrownLeft: 0.8, mouthFrownRight: 0.8, mouthShrugLower: 0.3 }],
+        ['funnel', "Round your lips into an 'O'", { mouthFunnel: 0.85, jawOpen: 0.25 }],
+        ['lips_press', 'Press your lips together hard', { mouthPressLeft: 0.8, mouthPressRight: 0.8, mouthClose: 0.3 }],
+        ['lips_roll', 'Roll your lips in (hide them)', { mouthRollLower: 0.8, mouthRollUpper: 0.8 }],
+        ['jaw_left', 'Move your jaw to your LEFT', { jawLeft: 0.8 }],
+        ['mouth_left', 'Move your mouth to your LEFT', { mouthLeft: 0.85 }],
       ];
       const data = {};
       const avatarCanvas = h('canvas', { class: 'face', style: { width: '220px' } });
-      status.before(avatarCanvas);
+      const steps = h('div', { class: 'steps' });
+      let skip = false;
+      const skipBtn = h('button', { class: 'btn ghost', onclick: () => { skip = true; ctl.tracker.stopRecording?.(); } }, "Skip this one (I can't do it)");
+      status.before(avatarCanvas, steps);
+      status.after(skipBtn);
+      big.after(h('p', { class: 'muted small' }, 'Copy the face on the left. Each movement is held for 2 seconds; do it clearly but without strain. Skipped movements stay out of your training.'));
       const avatar = new FaceAvatar(avatarCanvas, { view: 'mirror' });
       while (!ctl.stop && !(ctl.tracker.latest && ctl.tracker.latest.shapes)) { status.textContent = 'Looking for your face…'; await sleep(200); }
-      for (const [key, text, shapes] of prompts) {
+      for (const [k, [key, text, shapes]] of prompts.entries()) {
         if (ctl.stop) return;
+        skip = false;
+        skipBtn.hidden = k < 3;
+        steps.textContent = `Step ${k + 1} of ${prompts.length}`;
         avatar.draw(shapes);
         status.textContent = text;
         await countdown(text, 2);
+        if (skip) continue;
         big.textContent = `${text} — hold`;
-        if (simulate) ctl.tracker.expect(key === 'wink_left' ? { eyeBlinkLeft: 0.9 } : shapes, { correct: true, delay: 0 });
+        if (simulate) ctl.tracker.expect(shapes, { correct: true, delay: 0 });
         const rec = await ctl.tracker.record(2);
-        data[key] = rec.frames;
+        if (key === 'eyes_closed') cue.tick();
+        if (!skip && rec.frames.length >= 10) data[key] = rec.frames;
       }
       if (ctl.stop) return;
+      skipBtn.remove();
       try {
         const { neutral, wink_left: wink, ...rest } = data;
+        if (!neutral) throw new Error('Your face was not tracked during the neutral step. Move closer to the camera and try again.');
         const res = await api.calibrateFace(prof.id, { neutral, wink_left: wink, prompts: rest });
         big.textContent = 'Done!';
-        status.textContent = res.lr_swap ? 'Calibrated (left/right mapping corrected for your camera).' : 'Calibrated.';
+        const unlocked = (res.measured || []).length;
+        status.textContent = `Calibrated: ${unlocked} facial movements measured on your face.`;
+        if (res.side_check === 'mirrored') {
+          status.after(h('p', { class: 'small notice warn' }, 'Your wink showed up on the right eye: this camera sends a mirrored image. Left and right are now swapped for scoring.'));
+        } else if (res.side_check === 'unclear') {
+          status.after(h('p', { class: 'small notice' }, "The wink did not show clearly on one eye, so left/right could not be checked (that's fine if you can't wink). If one-sided expressions keep failing, recalibrate."));
+        }
       } catch (err) { status.textContent = err.message; return; }
     }
     await refreshProfile();
