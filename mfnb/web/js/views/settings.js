@@ -4,6 +4,7 @@ import { setSound } from '../audio.js';
 import { navigate, renderProfileSwitch } from '../main.js';
 import { FaceAvatar } from '../render/face.js';
 import { drawFaceOverlay, drawPoseOverlay } from '../render/overlay.js';
+import { displayFrames } from '../render/retarget.js';
 import { StickFigure } from '../render/stickman.js';
 import { refreshProfile, setProfile, state } from '../state.js';
 import { h, mount, segmented, sleep, toast } from '../ui.js';
@@ -85,7 +86,7 @@ export async function settingsView() {
           renderProfileSwitch(); navigate('#/home');
         } }, 'Delete this profile')))));
   const fig = new StickFigure(preview, { view: s.view, yaw: s.camera_yaw, sideInset: s.side_view });
-  fig.play(jab.frames, { loop: true });
+  fig.play(displayFrames(jab.frames), { loop: true });
   return { destroy: () => fig.stop() };
 }
 
@@ -151,7 +152,7 @@ export async function calibrateView(kind) {
       ];
       const data = {};
       const avatarCanvas = h('canvas', { class: 'face', style: { width: '220px' } });
-      status.replaceWith(h('div', { class: 'stack' }, avatarCanvas, status));
+      status.before(avatarCanvas);
       const avatar = new FaceAvatar(avatarCanvas, { view: 'mirror' });
       while (!ctl.stop && !(ctl.tracker.latest && ctl.tracker.latest.shapes)) { status.textContent = 'Looking for your face…'; await sleep(200); }
       for (const [key, text, shapes] of prompts) {

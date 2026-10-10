@@ -1,6 +1,7 @@
 // Library browser: filter, preview, exclude.
 import { api } from '../api.js';
 import { FaceAvatar } from '../render/face.js';
+import { displayFrames } from '../render/retarget.js';
 import { peakFrame, StickFigure } from '../render/stickman.js';
 import { state } from '../state.js';
 import { chips, h, modal, mount, segmented, toast } from '../ui.js';
@@ -89,7 +90,7 @@ export async function libraryView(modality) {
     if (modality === 'motor') {
       const data = await api.motorItem(it.id);
       player = new StickFigure(canvas, { view: s.view, yaw: s.camera_yaw, sideInset: s.side_view });
-      player.play(data.frames, { loop: true });
+      player.play(displayFrames(data.frames), { loop: true });
     } else {
       player = new FaceAvatar(canvas, { view: s.view === 'facing' ? 'facing' : 'mirror' });
       const loop = async () => { while (document.body.contains(canvas)) await player.play(it.target, 2.4); };

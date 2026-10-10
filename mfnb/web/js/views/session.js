@@ -4,6 +4,7 @@ import { cue, setSound } from '../audio.js';
 import { navigate } from '../main.js';
 import { FaceAvatar, mirrorShapes } from '../render/face.js';
 import { drawFaceOverlay, drawPoseOverlay } from '../render/overlay.js';
+import { displayFrames } from '../render/retarget.js';
 import { mirrorFrames, StickFigure } from '../render/stickman.js';
 import { refreshProfile, state } from '../state.js';
 import { h, mount, sleep, toast } from '../ui.js';
@@ -168,7 +169,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   const stimDuration = (itemId) => (modality === 'motor' ? items[itemId].duration_s : FACE_STIM_S) / speed;
   const showItem = async (itemId, mirrored) => {
     if (modality === 'motor') {
-      const frames = mirrored ? mirrorFrames(items[itemId].frames) : items[itemId].frames;
+      const frames = displayFrames(items[itemId].frames, mirrored);
       for (let r = 0; r < (s.stimulus_repeats || 1) && !ctl.aborted; r++) {
         await ctl.renderer.play(frames, { fps: 30, speed });
       }
@@ -191,7 +192,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     phase.textContent = 'watch';
     setInstr('');
     selfview.hidden = true;
-    nameTag.textContent = s.show_names ? items[trial.item_id].name : '';
+    nameTag.textContent = s.show_names ? `${items[trial.item_id].name}${trial.shown_mirrored && modality === 'motor' ? ' (other side)' : ''}` : '';
     await showItem(trial.item_id, trial.shown_mirrored);
     if (ctl.aborted) break;
     nameTag.textContent = '';
@@ -297,7 +298,7 @@ function cameraCheck(modality, ctl, video, overlay, simulate) {
     });
     const done = (v) => { unsub(); ctl.cancelCheck = null; resolve(v); };
     ctl.cancelCheck = () => done(false);
-    mount(h('div', { class: 'stack' },
+    mount(h('div', { class: 'stack', style: { padding: '22px', maxWidth: '1280px', margin: '0 auto' } },
       h('h1', {}, 'Camera check'),
       h('div', { class: 'camcheck' }, view,
         h('div', { class: 'card stack' },

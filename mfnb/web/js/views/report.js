@@ -1,7 +1,8 @@
 // End-of-block report with per-trial replay.
 import { api } from '../api.js';
 import { FaceAvatar, mirrorShapes } from '../render/face.js';
-import { mirrorFrames, StickFigure } from '../render/stickman.js';
+import { displayFrames } from '../render/retarget.js';
+import { StickFigure } from '../render/stickman.js';
 import { state } from '../state.js';
 import { fmtPct, h, modal, mount } from '../ui.js';
 
@@ -36,7 +37,7 @@ export async function reportView(bid) {
     const info = h('div', { class: 'stack' });
     const r = res && res.result;
     if (r) {
-      info.append(
+      info.replaceChildren(...[
         h('p', {}, `Score ${Math.round(res.score * 100)} (needed ${Math.round((r.threshold || 0) * 100)}) — `,
           res.valid ? (res.correct ? h('strong', { style: { color: 'var(--good)' } }, 'correct') : h('strong', { style: { color: 'var(--bad)' } }, 'not quite'))
             : h('strong', {}, `not scored: ${r.reason}`)),
@@ -44,7 +45,7 @@ export async function reportView(bid) {
         r.worst_bones && r.worst_bones.length ? h('p', { class: 'muted' }, `Largest differences: ${r.worst_bones.map((b) => `${b} (${Math.round(r.per_bone_deg[b])}°)`).join(', ')}.`) : null,
         r.keyposes && r.keyposes.length ? h('p', { class: 'muted' }, `Key poses reproduced: ${r.keyposes.filter((k) => k.hit).length}/${r.keyposes.length}.`) : null,
         r.missing && r.missing.length ? h('p', { class: 'muted' }, `Missing: ${r.missing.join(', ')}.`) : null,
-        r.extra && r.extra.length ? h('p', { class: 'muted' }, `Extra: ${r.extra.join(', ')}.`) : null);
+        r.extra && r.extra.length ? h('p', { class: 'muted' }, `Extra: ${r.extra.join(', ')}.`) : null].filter(Boolean));
     }
     const close = modal(h('div', { class: 'stack' },
       h('h2', {}, `Trial ${tr.index + 1}: ${targetDesc(tr)}`),
@@ -53,7 +54,7 @@ export async function reportView(bid) {
     const players = [];
     const stopAll = () => players.forEach((p) => p.stop());
     if (motor) {
-      const target = tr.targets.flatMap((t) => (t.effective_mirror ? mirrorFrames(items[t.item_id].frames) : items[t.item_id].frames));
+      const target = tr.targets.flatMap((t) => displayFrames(items[t.item_id].frames, t.effective_mirror));
       const a = new StickFigure(left, { view: s.view, yaw: s.camera_yaw });
       players.push(a); a.play(target, { loop: true });
       if (res && res.response && res.response.frames && res.response.frames.length) {

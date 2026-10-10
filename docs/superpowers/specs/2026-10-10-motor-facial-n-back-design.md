@@ -1,6 +1,6 @@
 # Motor & Facial N-Back — Design Spec (v1)
 
-Date: 2026-10-10 · Status: draft for review
+Date: 2026-10-10 · Status: implemented (v1)
 
 ## 1. Intent
 
