@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mfnb"
+version = "0.1.0"
+description = "Motor & Facial N-Back: webcam-based motor and facial working-memory training"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "numpy>=1.24",
+    "dtaidistance>=2.3.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "httpx>=0.25"]
+
+[project.scripts]
+mfnb = "mfnb.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mfnb*"]
+
+[tool.setuptools.package-data]
+mfnb = ["web/**/*", "motion/data/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
