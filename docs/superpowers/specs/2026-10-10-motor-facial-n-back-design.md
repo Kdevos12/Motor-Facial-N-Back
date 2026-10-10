@@ -92,12 +92,35 @@ are chained into combos of 2–4 segments → hundreds of items.
 
 **Tags per item**: `category`, `subcategory`, `complexity` 1–5 (1 = static posture,
 2 = single movement, 3 = 2-part combo or simultaneous arm+leg, 4 = 3-part, 5 = 4+ part),
-`flexibility` low/medium/high, `footprint_m` (computed), `duration_s`, `body_part`
+`flexibility` low/medium/high, `footprint_m` (computed), `rotation_deg` (computed), `duration_s`, `body_part`
 (upper/lower/full), `sided` (has a meaningful mirror), `source` (procedural/cmu).
 
-**Categories (v1 target ≥ 150 primitives, ≥ 500 items with combos)**: static postures (yoga,
-stances, gestures), boxing, kicks & knees (low/mid only), karate basics, tai chi & qigong
-(Ba Duan Jin), dance (in-place), fitness/calisthenics, everyday gestures & sports swings.
+**Categories (v1 target ≥ 150 primitives, ≥ 500 items with combos)**:
+
+| Category | Sub-categories / examples |
+|---|---|
+| Static postures | yoga, martial stances, gestures, balance holds |
+| Boxing | jab, cross, hooks, uppercuts, body shots, elbows; combos |
+| Evasion & defense | slips, rolls (bob & weave), pull-back, duck, shoulder roll, parries, catch; slip-and-counter combos |
+| Kicks & knees | front, push (teep), low/mid roundhouse, side, knees, checks — no spinning kicks |
+| Taekwondo | stances (ap/dwit kubi, juchum seogi, beom seogi), makki blocks, jireugi punches, sonnal strikes, ap/dollyo/yeop/naeryo/bandal/mireo chagi, in-place poomsae fragments |
+| Karate | uke blocks, zuki punches, geri kicks, kata fragments |
+| Shadow grappling | solo mimicry of partner techniques: judo uchikomi (seoi nage, osoto gari, o goshi, uchi mata entries, kuzushi pulls), wrestling (level change, short penetration step, sprawl, snap-down, arm drag, pummeling), clinch (collar tie, Thai plum + knees, body lock, frames) |
+| Tai chi & qigong | Ba Duan Jin, cloud hands, single whip, white crane, brush knee… |
+| Dance | in-place moves, arm patterns, ballet port de bras, pliés |
+| Fitness | squats, lunges, raises, twists, mobility drills |
+| Everyday & sports | gestures, throws, swings (golf, tennis, baseball) |
+
+Kick height and flexibility are tagged (high kicks only appear for `flexibility = high`).
+Moves that turn the back to the camera (e.g. a full seoi nage entry) carry `rotation_deg`;
+in-place adaptations (≤ 90° turn) are the default because monocular pose tracking confuses
+left/right when the user faces away. A profile switch allows the full-turn versions.
+
+No open mocap dataset was found for taekwondo, boxing defense or standing grappling
+(taekwondo poomsae datasets exist in papers but are not released; grappling data is either
+two-person research data without a clear licence, e.g. Harmony4D, or commercial). These
+categories are therefore authored procedurally; the importer remains open for any future
+BVH source.
 
 **Open-data import** — CMU Graphics Lab mocap (BVH via the MIT-licensed `adventuring/mocap`
 GitHub mirror; CMU terms: free use, no resale). Pipeline: parse BVH → canonical joints →
@@ -143,7 +166,8 @@ score = 0.7 × cosine + 0.3 × (1 − mean abs diff on active dims). Calibration
 
 - **Body calibration**: 3 s neutral stance → bone lengths (renderer proportions, leg length).
 - **Flexibility & space**: low/medium/high lower-body flexibility filters items and scales
-  leg tolerance; space limit filters by footprint.
+  leg tolerance; space limit filters by footprint; "allow turning away from camera" (off by
+  default) unlocks full-turn techniques.
 - **Laterality & view**: dominant side / guard (orthodox/southpaw, which flips stance-based
   items), stimulus view = mirror (default) / facing / from behind; L/R limb colour coding.
 - **Pacing & tolerance**: playback speed, response multiplier (2–3×), inter-trial pause,
