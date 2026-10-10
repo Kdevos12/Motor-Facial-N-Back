@@ -1,0 +1,4727 @@
+{
+"box.cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.62
+},
+"box.double_jab": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.jab": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.lead_backfist": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.685
+},
+"box.lead_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"box.lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.lead_uppercut": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.overhand": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.749
+},
+"box.rear_body_cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.674
+},
+"box.rear_elbow": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"box.rear_hook": {
+"chiral": true,
+"mirror_score": 0.03,
+"threshold": 0.527
+},
+"box.rear_shovel": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.rear_up_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"box.rear_uppercut": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.02_05.0": {
+"chiral": false,
+"mirror_score": 0.459,
+"threshold": 0.45
+},
+"cmu.02_05.1": {
+"chiral": true,
+"mirror_score": 0.023,
+"threshold": 0.45
+},
+"cmu.02_05.2": {
+"chiral": true,
+"mirror_score": 0.203,
+"threshold": 0.45
+},
+"cmu.02_05.3": {
+"chiral": false,
+"mirror_score": 0.542,
+"threshold": 0.45
+},
+"cmu.02_07.0": {
+"chiral": false,
+"mirror_score": 0.702,
+"threshold": 0.558
+},
+"cmu.02_07.1": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.45
+},
+"cmu.02_07.2": {
+"chiral": true,
+"mirror_score": 0.236,
+"threshold": 0.45
+},
+"cmu.02_07.3": {
+"chiral": true,
+"mirror_score": 0.04,
+"threshold": 0.45
+},
+"cmu.02_07.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.02_07.5": {
+"chiral": true,
+"mirror_score": 0.118,
+"threshold": 0.45
+},
+"cmu.02_08.0": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.02_08.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.02_08.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.02_08.3": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.124_03.0": {
+"chiral": false,
+"mirror_score": 0.721,
+"threshold": 0.495
+},
+"cmu.124_03.1": {
+"chiral": true,
+"mirror_score": 0.014,
+"threshold": 0.45
+},
+"cmu.124_07.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.124_07.2": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.124_07.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.124_09.0": {
+"chiral": true,
+"mirror_score": 0.05,
+"threshold": 0.45
+},
+"cmu.124_09.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.124_09.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.124_12.0": {
+"chiral": true,
+"mirror_score": 0.031,
+"threshold": 0.45
+},
+"cmu.124_12.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.124_12.4": {
+"chiral": false,
+"mirror_score": 0.694,
+"threshold": 0.503
+},
+"cmu.12_04.0": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.12_04.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.10": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.12_04.11": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.13": {
+"chiral": true,
+"mirror_score": 0.161,
+"threshold": 0.45
+},
+"cmu.12_04.14": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.16": {
+"chiral": true,
+"mirror_score": 0.048,
+"threshold": 0.45
+},
+"cmu.12_04.17": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.12_04.18": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.20": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.21": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.23": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.12_04.24": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.25": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.12_04.27": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.28": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.3": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.12_04.30": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.31": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.12_04.33": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.34": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.35": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.37": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.38": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.4": {
+"chiral": false,
+"mirror_score": 0.841,
+"threshold": 0.75
+},
+"cmu.12_04.40": {
+"chiral": true,
+"mirror_score": 0.293,
+"threshold": 0.45
+},
+"cmu.12_04.41": {
+"chiral": false,
+"mirror_score": 0.797,
+"threshold": 0.45
+},
+"cmu.12_04.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.7": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.12_04.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_01.0": {
+"chiral": false,
+"mirror_score": 0.816,
+"threshold": 0.655
+},
+"cmu.135_01.10": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_01.15": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_01.19": {
+"chiral": true,
+"mirror_score": 0.045,
+"threshold": 0.45
+},
+"cmu.135_01.2": {
+"chiral": true,
+"mirror_score": 0.022,
+"threshold": 0.45
+},
+"cmu.135_01.20": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_01.22": {
+"chiral": true,
+"mirror_score": 0.044,
+"threshold": 0.45
+},
+"cmu.135_01.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_01.5": {
+"chiral": true,
+"mirror_score": 0.184,
+"threshold": 0.45
+},
+"cmu.135_01.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_02.0": {
+"chiral": false,
+"mirror_score": 0.73,
+"threshold": 0.45
+},
+"cmu.135_02.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_02.11": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_02.16": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_02.2": {
+"chiral": true,
+"mirror_score": 0.289,
+"threshold": 0.45
+},
+"cmu.135_02.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_02.7": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.135_02.9": {
+"chiral": true,
+"mirror_score": 0.057,
+"threshold": 0.45
+},
+"cmu.135_04.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_04.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_04.5": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.135_05.10": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.135_05.9": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_06.10": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_06.8": {
+"chiral": true,
+"mirror_score": 0.406,
+"threshold": 0.45
+},
+"cmu.135_07.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_07.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.135_11.0": {
+"chiral": true,
+"mirror_score": 0.435,
+"threshold": 0.45
+},
+"cmu.135_11.4": {
+"chiral": true,
+"mirror_score": 0.018,
+"threshold": 0.45
+},
+"cmu.135_11.9": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.45
+},
+"cmu.13_17.0": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.13_17.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_17.10": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_17.11": {
+"chiral": true,
+"mirror_score": 0.142,
+"threshold": 0.45
+},
+"cmu.13_17.3": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"cmu.13_17.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_17.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_17.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_18.0": {
+"chiral": true,
+"mirror_score": 0.01,
+"threshold": 0.45
+},
+"cmu.13_18.1": {
+"chiral": true,
+"mirror_score": 0.145,
+"threshold": 0.45
+},
+"cmu.13_18.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_18.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.13_18.4": {
+"chiral": false,
+"mirror_score": 0.54,
+"threshold": 0.45
+},
+"cmu.13_18.5": {
+"chiral": true,
+"mirror_score": 0.046,
+"threshold": 0.45
+},
+"cmu.13_18.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_05.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_05.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_05.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_06.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_06.10": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_06.12": {
+"chiral": true,
+"mirror_score": 0.093,
+"threshold": 0.45
+},
+"cmu.144_06.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_06.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_06.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_07.0": {
+"chiral": true,
+"mirror_score": 0.053,
+"threshold": 0.45
+},
+"cmu.144_07.1": {
+"chiral": true,
+"mirror_score": 0.654,
+"threshold": 0.732
+},
+"cmu.144_07.2": {
+"chiral": false,
+"mirror_score": 0.499,
+"threshold": 0.45
+},
+"cmu.144_07.3": {
+"chiral": false,
+"mirror_score": 0.688,
+"threshold": 0.587
+},
+"cmu.144_07.4": {
+"chiral": false,
+"mirror_score": 0.741,
+"threshold": 0.472
+},
+"cmu.144_07.5": {
+"chiral": true,
+"mirror_score": 0.718,
+"threshold": 0.75
+},
+"cmu.144_08.0": {
+"chiral": true,
+"mirror_score": 0.238,
+"threshold": 0.721
+},
+"cmu.144_08.1": {
+"chiral": false,
+"mirror_score": 0.759,
+"threshold": 0.75
+},
+"cmu.144_08.2": {
+"chiral": true,
+"mirror_score": 0.222,
+"threshold": 0.603
+},
+"cmu.144_08.4": {
+"chiral": true,
+"mirror_score": 0.116,
+"threshold": 0.692
+},
+"cmu.144_08.5": {
+"chiral": true,
+"mirror_score": 0.641,
+"threshold": 0.75
+},
+"cmu.144_08.6": {
+"chiral": true,
+"mirror_score": 0.284,
+"threshold": 0.457
+},
+"cmu.144_09.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_09.11": {
+"chiral": true,
+"mirror_score": 0.022,
+"threshold": 0.45
+},
+"cmu.144_09.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_09.4": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.144_09.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_09.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.704
+},
+"cmu.144_10.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_10.12": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_10.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_10.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_10.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_10.9": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.694
+},
+"cmu.144_11.0": {
+"chiral": true,
+"mirror_score": 0.029,
+"threshold": 0.45
+},
+"cmu.144_11.10": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.45
+},
+"cmu.144_11.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_11.7": {
+"chiral": true,
+"mirror_score": 0.006,
+"threshold": 0.45
+},
+"cmu.144_13.0": {
+"chiral": true,
+"mirror_score": 0.227,
+"threshold": 0.45
+},
+"cmu.144_13.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_13.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_13.3": {
+"chiral": true,
+"mirror_score": 0.037,
+"threshold": 0.45
+},
+"cmu.144_13.4": {
+"chiral": true,
+"mirror_score": 0.016,
+"threshold": 0.45
+},
+"cmu.144_14.0": {
+"chiral": false,
+"mirror_score": 0.539,
+"threshold": 0.45
+},
+"cmu.144_14.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_14.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_14.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_14.4": {
+"chiral": false,
+"mirror_score": 0.547,
+"threshold": 0.45
+},
+"cmu.144_17.1": {
+"chiral": true,
+"mirror_score": 0.009,
+"threshold": 0.519
+},
+"cmu.144_17.2": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.144_17.4": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.501
+},
+"cmu.144_17.7": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_18.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_18.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_18.6": {
+"chiral": true,
+"mirror_score": 0.011,
+"threshold": 0.45
+},
+"cmu.144_18.9": {
+"chiral": true,
+"mirror_score": 0.099,
+"threshold": 0.45
+},
+"cmu.144_20.0": {
+"chiral": false,
+"mirror_score": 0.733,
+"threshold": 0.457
+},
+"cmu.144_20.1": {
+"chiral": true,
+"mirror_score": 0.033,
+"threshold": 0.45
+},
+"cmu.144_20.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_20.3": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.144_20.4": {
+"chiral": true,
+"mirror_score": 0.378,
+"threshold": 0.45
+},
+"cmu.144_20.5": {
+"chiral": true,
+"mirror_score": 0.279,
+"threshold": 0.45
+},
+"cmu.144_21.0": {
+"chiral": true,
+"mirror_score": 0.183,
+"threshold": 0.45
+},
+"cmu.144_21.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_21.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_21.3": {
+"chiral": true,
+"mirror_score": 0.028,
+"threshold": 0.45
+},
+"cmu.144_21.4": {
+"chiral": true,
+"mirror_score": 0.011,
+"threshold": 0.45
+},
+"cmu.144_22.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_22.2": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.144_22.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_22.7": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.144_24.0": {
+"chiral": false,
+"mirror_score": 0.536,
+"threshold": 0.5
+},
+"cmu.144_24.11": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_24.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_24.7": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_26.0": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"cmu.144_26.1": {
+"chiral": true,
+"mirror_score": 0.17,
+"threshold": 0.45
+},
+"cmu.144_26.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_26.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_26.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.144_26.7": {
+"chiral": true,
+"mirror_score": 0.251,
+"threshold": 0.45
+},
+"cmu.144_27.0": {
+"chiral": true,
+"mirror_score": 0.063,
+"threshold": 0.589
+},
+"cmu.144_27.1": {
+"chiral": true,
+"mirror_score": 0.245,
+"threshold": 0.45
+},
+"cmu.144_27.2": {
+"chiral": true,
+"mirror_score": 0.086,
+"threshold": 0.45
+},
+"cmu.144_27.3": {
+"chiral": true,
+"mirror_score": 0.027,
+"threshold": 0.45
+},
+"cmu.144_27.4": {
+"chiral": true,
+"mirror_score": 0.073,
+"threshold": 0.45
+},
+"cmu.144_27.5": {
+"chiral": true,
+"mirror_score": 0.139,
+"threshold": 0.607
+},
+"cmu.14_01.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_01.11": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_01.12": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_01.13": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_01.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_01.3": {
+"chiral": true,
+"mirror_score": 0.363,
+"threshold": 0.45
+},
+"cmu.14_01.4": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.14_01.7": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.14_02.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_02.11": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_02.12": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_02.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.10": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.12": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.3": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.7": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_03.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_06.0": {
+"chiral": false,
+"mirror_score": 0.843,
+"threshold": 0.521
+},
+"cmu.14_06.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_06.10": {
+"chiral": true,
+"mirror_score": 0.388,
+"threshold": 0.45
+},
+"cmu.14_06.11": {
+"chiral": true,
+"mirror_score": 0.013,
+"threshold": 0.45
+},
+"cmu.14_06.12": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.14_06.14": {
+"chiral": false,
+"mirror_score": 0.642,
+"threshold": 0.45
+},
+"cmu.14_06.15": {
+"chiral": true,
+"mirror_score": 0.117,
+"threshold": 0.45
+},
+"cmu.14_06.3": {
+"chiral": false,
+"mirror_score": 0.885,
+"threshold": 0.45
+},
+"cmu.14_06.4": {
+"chiral": true,
+"mirror_score": 0.146,
+"threshold": 0.45
+},
+"cmu.14_06.5": {
+"chiral": true,
+"mirror_score": 0.404,
+"threshold": 0.452
+},
+"cmu.14_06.7": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.589
+},
+"cmu.14_06.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_14.0": {
+"chiral": false,
+"mirror_score": 0.827,
+"threshold": 0.45
+},
+"cmu.14_14.1": {
+"chiral": false,
+"mirror_score": 0.76,
+"threshold": 0.45
+},
+"cmu.14_14.10": {
+"chiral": true,
+"mirror_score": 0.066,
+"threshold": 0.45
+},
+"cmu.14_14.2": {
+"chiral": false,
+"mirror_score": 0.699,
+"threshold": 0.45
+},
+"cmu.14_14.3": {
+"chiral": true,
+"mirror_score": 0.204,
+"threshold": 0.45
+},
+"cmu.14_14.4": {
+"chiral": false,
+"mirror_score": 0.559,
+"threshold": 0.45
+},
+"cmu.14_14.5": {
+"chiral": true,
+"mirror_score": 0.085,
+"threshold": 0.45
+},
+"cmu.14_14.6": {
+"chiral": false,
+"mirror_score": 0.727,
+"threshold": 0.45
+},
+"cmu.14_14.7": {
+"chiral": false,
+"mirror_score": 0.733,
+"threshold": 0.45
+},
+"cmu.14_14.8": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.14_14.9": {
+"chiral": true,
+"mirror_score": 0.069,
+"threshold": 0.45
+},
+"cmu.15_04.0": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.15_04.12": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_04.17": {
+"chiral": true,
+"mirror_score": 0.167,
+"threshold": 0.45
+},
+"cmu.15_04.22": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_04.27": {
+"chiral": true,
+"mirror_score": 0.018,
+"threshold": 0.45
+},
+"cmu.15_04.34": {
+"chiral": true,
+"mirror_score": 0.025,
+"threshold": 0.45
+},
+"cmu.15_04.39": {
+"chiral": false,
+"mirror_score": 0.615,
+"threshold": 0.45
+},
+"cmu.15_04.44": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_04.50": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_04.56": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_04.6": {
+"chiral": true,
+"mirror_score": 0.232,
+"threshold": 0.45
+},
+"cmu.15_04.61": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_05.0": {
+"chiral": true,
+"mirror_score": 0.092,
+"threshold": 0.45
+},
+"cmu.15_05.12": {
+"chiral": true,
+"mirror_score": 0.286,
+"threshold": 0.45
+},
+"cmu.15_05.18": {
+"chiral": true,
+"mirror_score": 0.013,
+"threshold": 0.464
+},
+"cmu.15_05.23": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"cmu.15_05.29": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_05.34": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.15_05.40": {
+"chiral": true,
+"mirror_score": 0.397,
+"threshold": 0.45
+},
+"cmu.15_05.45": {
+"chiral": false,
+"mirror_score": 0.677,
+"threshold": 0.45
+},
+"cmu.15_05.52": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.15_05.57": {
+"chiral": true,
+"mirror_score": 0.047,
+"threshold": 0.45
+},
+"cmu.15_05.63": {
+"chiral": true,
+"mirror_score": 0.368,
+"threshold": 0.516
+},
+"cmu.15_05.7": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"cmu.24_01.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.24_01.1": {
+"chiral": true,
+"mirror_score": 0.011,
+"threshold": 0.45
+},
+"cmu.24_01.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.24_01.4": {
+"chiral": false,
+"mirror_score": 0.758,
+"threshold": 0.45
+},
+"cmu.24_01.5": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.24_01.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.42_01.0": {
+"chiral": false,
+"mirror_score": 0.774,
+"threshold": 0.45
+},
+"cmu.42_01.1": {
+"chiral": false,
+"mirror_score": 0.525,
+"threshold": 0.45
+},
+"cmu.42_01.2": {
+"chiral": false,
+"mirror_score": 0.807,
+"threshold": 0.66
+},
+"cmu.63_01.0": {
+"chiral": true,
+"mirror_score": 0.188,
+"threshold": 0.45
+},
+"cmu.63_02.0": {
+"chiral": true,
+"mirror_score": 0.281,
+"threshold": 0.45
+},
+"cmu.63_03.0": {
+"chiral": true,
+"mirror_score": 0.365,
+"threshold": 0.45
+},
+"cmu.80_02.0": {
+"chiral": true,
+"mirror_score": 0.281,
+"threshold": 0.517
+},
+"cmu.80_02.1": {
+"chiral": false,
+"mirror_score": 0.804,
+"threshold": 0.539
+},
+"cmu.80_03.0": {
+"chiral": true,
+"mirror_score": 0.261,
+"threshold": 0.45
+},
+"cmu.80_03.1": {
+"chiral": true,
+"mirror_score": 0.136,
+"threshold": 0.45
+},
+"cmu.80_10.0": {
+"chiral": false,
+"mirror_score": 0.692,
+"threshold": 0.45
+},
+"cmu.80_10.1": {
+"chiral": true,
+"mirror_score": 0.105,
+"threshold": 0.45
+},
+"cmu.80_12.0": {
+"chiral": true,
+"mirror_score": 0.098,
+"threshold": 0.45
+},
+"cmu.80_12.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.80_12.4": {
+"chiral": true,
+"mirror_score": 0.013,
+"threshold": 0.45
+},
+"cmu.80_13.0": {
+"chiral": false,
+"mirror_score": 0.636,
+"threshold": 0.45
+},
+"cmu.80_13.1": {
+"chiral": true,
+"mirror_score": 0.165,
+"threshold": 0.45
+},
+"cmu.80_14.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.80_14.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.80_14.3": {
+"chiral": true,
+"mirror_score": 0.073,
+"threshold": 0.45
+},
+"cmu.93_03.0": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.93_08.0": {
+"chiral": true,
+"mirror_score": 0.025,
+"threshold": 0.45
+},
+"cmu.94_02.2": {
+"chiral": true,
+"mirror_score": 0.357,
+"threshold": 0.45
+},
+"cmu.94_02.5": {
+"chiral": true,
+"mirror_score": 0.28,
+"threshold": 0.45
+},
+"cmu.94_03.5": {
+"chiral": true,
+"mirror_score": 0.042,
+"threshold": 0.45
+},
+"cmu.94_03.6": {
+"chiral": true,
+"mirror_score": 0.128,
+"threshold": 0.45
+},
+"cmu.94_04.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_04.1": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"cmu.94_05.2": {
+"chiral": true,
+"mirror_score": 0.015,
+"threshold": 0.45
+},
+"cmu.94_05.4": {
+"chiral": true,
+"mirror_score": 0.073,
+"threshold": 0.45
+},
+"cmu.94_06.2": {
+"chiral": true,
+"mirror_score": 0.154,
+"threshold": 0.45
+},
+"cmu.94_06.6": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_07.0": {
+"chiral": false,
+"mirror_score": 0.573,
+"threshold": 0.45
+},
+"cmu.94_07.1": {
+"chiral": true,
+"mirror_score": 0.069,
+"threshold": 0.45
+},
+"cmu.94_07.4": {
+"chiral": true,
+"mirror_score": 0.04,
+"threshold": 0.45
+},
+"cmu.94_07.5": {
+"chiral": true,
+"mirror_score": 0.035,
+"threshold": 0.45
+},
+"cmu.94_08.2": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"cmu.94_09.0": {
+"chiral": true,
+"mirror_score": 0.02,
+"threshold": 0.45
+},
+"cmu.94_09.2": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_09.4": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_09.9": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_10.0": {
+"chiral": false,
+"mirror_score": 0.742,
+"threshold": 0.45
+},
+"cmu.94_10.1": {
+"chiral": false,
+"mirror_score": 0.787,
+"threshold": 0.45
+},
+"cmu.94_10.2": {
+"chiral": false,
+"mirror_score": 0.727,
+"threshold": 0.45
+},
+"cmu.94_10.3": {
+"chiral": false,
+"mirror_score": 0.683,
+"threshold": 0.45
+},
+"cmu.94_11.10": {
+"chiral": true,
+"mirror_score": 0.254,
+"threshold": 0.45
+},
+"cmu.94_11.2": {
+"chiral": true,
+"mirror_score": 0.077,
+"threshold": 0.45
+},
+"cmu.94_11.4": {
+"chiral": false,
+"mirror_score": 0.594,
+"threshold": 0.45
+},
+"cmu.94_12.0": {
+"chiral": false,
+"mirror_score": 0.549,
+"threshold": 0.45
+},
+"cmu.94_12.10": {
+"chiral": true,
+"mirror_score": 0.036,
+"threshold": 0.45
+},
+"cmu.94_12.7": {
+"chiral": true,
+"mirror_score": 0.078,
+"threshold": 0.45
+},
+"cmu.94_12.8": {
+"chiral": true,
+"mirror_score": 0.069,
+"threshold": 0.45
+},
+"cmu.94_13.0": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_13.2": {
+"chiral": true,
+"mirror_score": 0.429,
+"threshold": 0.45
+},
+"cmu.94_13.3": {
+"chiral": false,
+"mirror_score": 0.668,
+"threshold": 0.45
+},
+"cmu.94_13.5": {
+"chiral": true,
+"mirror_score": 0.553,
+"threshold": 0.75
+},
+"cmu.94_14.0": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"cmu.94_15.4": {
+"chiral": true,
+"mirror_score": 0.322,
+"threshold": 0.45
+},
+"cmu.94_16.0": {
+"chiral": true,
+"mirror_score": 0.079,
+"threshold": 0.45
+},
+"cmu.94_16.1": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"cmu.94_16.3": {
+"chiral": true,
+"mirror_score": 0.414,
+"threshold": 0.45
+},
+"cmu.94_16.4": {
+"chiral": true,
+"mirror_score": 0.162,
+"threshold": 0.45
+},
+"combo.age_uke+empi_uchi": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.45
+},
+"combo.age_uke+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.age_uke+shuto_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.age_uke+shuto_uke+gedan_barai": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.an_chagi+dollyo_chagi+kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.513
+},
+"combo.an_chagi+kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ap_chagi+kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ap_chagi+mireo_chagi+bakkat_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ap_chagi+yeop_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ap_ollyeo_chagi+an_chagi+ap_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.667
+},
+"combo.ap_ollyeo_chagi+bakkat_chagi+mireo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.ap_ollyeo_chagi+bandal_chagi": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.541
+},
+"combo.arabesque+body_roll+dab+egyptian": {
+"chiral": true,
+"mirror_score": 0.079,
+"threshold": 0.45
+},
+"combo.arabesque+robot_arms": {
+"chiral": true,
+"mirror_score": 0.247,
+"threshold": 0.45
+},
+"combo.arae_makki+dubeon_jireugi": {
+"chiral": true,
+"mirror_score": 0.026,
+"threshold": 0.45
+},
+"combo.arae_makki+momtong_an_makki": {
+"chiral": true,
+"mirror_score": 0.12,
+"threshold": 0.45
+},
+"combo.arae_makki+momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.021,
+"threshold": 0.45
+},
+"combo.arae_makki+olgul_makki+momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.archery+look_around": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.archery+tennis_forehand": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.arm_circles+ytw": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.arm_drag+single_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.axe_chop+stretch_yawn": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.475
+},
+"combo.bakkat_chagi+ap_chagi+naeryo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.bakkat_chagi+bandal_chagi+ap_ollyeo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.734
+},
+"combo.bandal_chagi+an_chagi+yeop_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.bandal_chagi+dollyo_chagi": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.75
+},
+"combo.baseball_pitch+salute+phone_call+archery": {
+"chiral": true,
+"mirror_score": 0.062,
+"threshold": 0.45
+},
+"combo.baseball_swing+point_forward": {
+"chiral": false,
+"mirror_score": 0.522,
+"threshold": 0.45
+},
+"combo.basketball_shot+clap": {
+"chiral": false,
+"mirror_score": 0.656,
+"threshold": 0.45
+},
+"combo.biceps_curl+front_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.biceps_curl+shoulder_press": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.biceps_curl+wood_chop": {
+"chiral": false,
+"mirror_score": 0.764,
+"threshold": 0.45
+},
+"combo.body_lock+plum_knee": {
+"chiral": true,
+"mirror_score": 0.36,
+"threshold": 0.45
+},
+"combo.body_roll+dab": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.bow+wave": {
+"chiral": true,
+"mirror_score": 0.079,
+"threshold": 0.75
+},
+"combo.brush_knee_l+play_lute": {
+"chiral": false,
+"mirror_score": 0.656,
+"threshold": 0.572
+},
+"combo.butt_kicks+triceps_ext": {
+"chiral": false,
+"mirror_score": 0.865,
+"threshold": 0.45
+},
+"combo.catch+jab+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.check_watch+axe_chop+basketball_shot": {
+"chiral": false,
+"mirror_score": 0.585,
+"threshold": 0.45
+},
+"combo.check_watch+phone_call": {
+"chiral": true,
+"mirror_score": 0.058,
+"threshold": 0.45
+},
+"combo.chicken_dance+twist": {
+"chiral": false,
+"mirror_score": 0.859,
+"threshold": 0.565
+},
+"combo.clap+bow+phone_call": {
+"chiral": true,
+"mirror_score": 0.335,
+"threshold": 0.45
+},
+"combo.clap+golf_swing+facepalm": {
+"chiral": false,
+"mirror_score": 0.566,
+"threshold": 0.45
+},
+"combo.clinch_elbow+plum_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.clinch_elbow+plum_knee+body_lock": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.cloud_hands+single_whip": {
+"chiral": true,
+"mirror_score": 0.117,
+"threshold": 0.45
+},
+"combo.collar_tie+snap_down": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.collar_tie+whizzer+level_change+single_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.come_here+tennis_serve": {
+"chiral": true,
+"mirror_score": 0.041,
+"threshold": 0.45
+},
+"combo.commencement+wild_horse_l": {
+"chiral": true,
+"mirror_score": 0.392,
+"threshold": 0.561
+},
+"combo.cross+lead_backfist+overhand+lead_elbow": {
+"chiral": true,
+"mirror_score": 0.012,
+"threshold": 0.45
+},
+"combo.cross+lead_hook+cross": {
+"chiral": true,
+"mirror_score": 0.017,
+"threshold": 0.45
+},
+"combo.cross+lead_hook+rear_low_round": {
+"chiral": true,
+"mirror_score": 0.071,
+"threshold": 0.45
+},
+"combo.cross+rear_hook+rear_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.cross_guard+elbow_block+shoulder_roll": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.dab+floss": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.dab+plie_first+robot_arms": {
+"chiral": true,
+"mirror_score": 0.124,
+"threshold": 0.45
+},
+"combo.deashi_barai+o_goshi_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.disco_point+hip_sway": {
+"chiral": true,
+"mirror_score": 0.181,
+"threshold": 0.45
+},
+"combo.dollyo_chagi+bandal_chagi+kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.114,
+"threshold": 0.45
+},
+"combo.dollyo_chagi+kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.75
+},
+"combo.double_jab+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.double_leg+snap_down": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"combo.draw_bow_l+owl_gazes_back": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.draw_bow_l+separate_heaven_earth+ward_off_l": {
+"chiral": true,
+"mirror_score": 0.074,
+"threshold": 0.45
+},
+"combo.drink+stretch_yawn": {
+"chiral": false,
+"mirror_score": 0.679,
+"threshold": 0.45
+},
+"combo.dubeon_jireugi+olgul_jireugi+palkup_dollyo_chigi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.dubeon_jireugi+sonnal_mok_chigi": {
+"chiral": true,
+"mirror_score": 0.014,
+"threshold": 0.45
+},
+"combo.duck+rear_uppercut": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.duck+roll_lr": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.egyptian+macarena_arms": {
+"chiral": true,
+"mirror_score": 0.439,
+"threshold": 0.458
+},
+"combo.egyptian+releve+sprinkler": {
+"chiral": false,
+"mirror_score": 0.672,
+"threshold": 0.58
+},
+"combo.egyptian+salsa_basic": {
+"chiral": true,
+"mirror_score": 0.221,
+"threshold": 0.45
+},
+"combo.egyptian+sprinkler": {
+"chiral": true,
+"mirror_score": 0.113,
+"threshold": 0.45
+},
+"combo.elbow_block+high_guard": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.elbow_block+roll_lr+cross_guard": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.empi_uchi+shuto_uke+yoko_geri+uchi_uke": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.empi_uchi+soto_uke": {
+"chiral": true,
+"mirror_score": 0.232,
+"threshold": 0.485
+},
+"combo.empi_uchi+uraken_uchi": {
+"chiral": true,
+"mirror_score": 0.261,
+"threshold": 0.75
+},
+"combo.fan_through_back+golden_rooster_l+commencement": {
+"chiral": true,
+"mirror_score": 0.271,
+"threshold": 0.597
+},
+"combo.fan_through_back+owl_gazes_back": {
+"chiral": true,
+"mirror_score": 0.255,
+"threshold": 0.589
+},
+"combo.fishing_cast+bowling": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.fishing_cast+scratch_head": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.floss+twist": {
+"chiral": false,
+"mirror_score": 0.809,
+"threshold": 0.535
+},
+"combo.frame_push+clinch_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.frame_push+plum_knee+clinch_elbow+body_lock": {
+"chiral": true,
+"mirror_score": 0.039,
+"threshold": 0.45
+},
+"combo.gedan_barai+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.gedan_barai+mae_geri+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.gedan_barai+shuto_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.gedan_barai+yoko_geri+uraken_uchi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.golden_rooster_l+ward_off_l+white_crane+hold_heavens": {
+"chiral": false,
+"mirror_score": 0.665,
+"threshold": 0.45
+},
+"combo.golf_swing+clap": {
+"chiral": true,
+"mirror_score": 0.4,
+"threshold": 0.45
+},
+"combo.good_morning+calf_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"combo.good_morning+triceps_ext": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.good_morning+windmill": {
+"chiral": false,
+"mirror_score": 0.855,
+"threshold": 0.45
+},
+"combo.gyaku_zuki+gedan_barai": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.hand_fight+collar_tie+single_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.hand_fight+single_leg": {
+"chiral": true,
+"mirror_score": 0.017,
+"threshold": 0.45
+},
+"combo.harai_goshi+deashi_barai+uchi_mata_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.hecheo_makki+palkup_dollyo_chigi+olgul_jireugi": {
+"chiral": true,
+"mirror_score": 0.227,
+"threshold": 0.45
+},
+"combo.hecheo_makki+sonnal_makki+olgul_jireugi": {
+"chiral": true,
+"mirror_score": 0.191,
+"threshold": 0.45
+},
+"combo.high_guard+lead_hook+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.high_knees+butt_kicks": {
+"chiral": true,
+"mirror_score": 0.209,
+"threshold": 0.45
+},
+"combo.high_pat+golden_rooster_l": {
+"chiral": false,
+"mirror_score": 0.5,
+"threshold": 0.483
+},
+"combo.hip_abduction+knee_hug+side_bend+triceps_ext": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"combo.hip_abduction+torso_twist+upright_row+front_raise": {
+"chiral": false,
+"mirror_score": 0.693,
+"threshold": 0.664
+},
+"combo.hip_sway+dab": {
+"chiral": true,
+"mirror_score": 0.213,
+"threshold": 0.45
+},
+"combo.hip_sway+salsa_basic+plie_second": {
+"chiral": false,
+"mirror_score": 0.753,
+"threshold": 0.45
+},
+"combo.hip_sway+tendu": {
+"chiral": false,
+"mirror_score": 0.724,
+"threshold": 0.675
+},
+"combo.hold_feet+bounce_toes": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.hold_feet+cloud_hands+roll_back": {
+"chiral": false,
+"mirror_score": 0.766,
+"threshold": 0.45
+},
+"combo.hold_heavens+separate_heaven_earth": {
+"chiral": false,
+"mirror_score": 0.649,
+"threshold": 0.45
+},
+"combo.jab+cross": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.jab+cross+lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.09,
+"threshold": 0.45
+},
+"combo.jab+cross+lead_hook": {
+"chiral": true,
+"mirror_score": 0.08,
+"threshold": 0.45
+},
+"combo.jab+cross+lead_hook+cross": {
+"chiral": true,
+"mirror_score": 0.082,
+"threshold": 0.45
+},
+"combo.jab+cross+lead_knee": {
+"chiral": true,
+"mirror_score": 0.055,
+"threshold": 0.45
+},
+"combo.jab+cross+lead_side_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.jab+cross+rear_low_round": {
+"chiral": true,
+"mirror_score": 0.345,
+"threshold": 0.45
+},
+"combo.jab+cross+roll_lr+cross": {
+"chiral": true,
+"mirror_score": 0.018,
+"threshold": 0.45
+},
+"combo.jab+cross+slip_left+cross": {
+"chiral": true,
+"mirror_score": 0.137,
+"threshold": 0.45
+},
+"combo.jab+jab+cross": {
+"chiral": true,
+"mirror_score": 0.085,
+"threshold": 0.562
+},
+"combo.jab+overhand": {
+"chiral": true,
+"mirror_score": 0.45,
+"threshold": 0.544
+},
+"combo.jab+rear_body_cross+lead_hook": {
+"chiral": true,
+"mirror_score": 0.019,
+"threshold": 0.45
+},
+"combo.jab+rear_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.jab+rear_mid_round": {
+"chiral": true,
+"mirror_score": 0.2,
+"threshold": 0.45
+},
+"combo.jab+rear_uppercut+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.jab+rear_uppercut+lead_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.jab+slip_right+cross": {
+"chiral": true,
+"mirror_score": 0.032,
+"threshold": 0.45
+},
+"combo.jazz_hands+body_roll": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.526
+},
+"combo.jazz_hands+ymca_a": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.kizami_zuki+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.01,
+"threshold": 0.75
+},
+"combo.knee_lift+rear_mid_round+lead_oblique+rear_teep": {
+"chiral": true,
+"mirror_score": 0.033,
+"threshold": 0.45
+},
+"combo.kouchi_gari+seoi_nage_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.kouchi_gari+tai_otoshi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.kuzushi+seoi_nage_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.kuzushi+uchi_mata_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.kyorugi_punch+bandal_chagi": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.454
+},
+"combo.lasso+passe+jazz_hands": {
+"chiral": false,
+"mirror_score": 0.629,
+"threshold": 0.522
+},
+"combo.lateral_lunge+front_raise+sumo_squat+wood_chop": {
+"chiral": false,
+"mirror_score": 0.776,
+"threshold": 0.45
+},
+"combo.lateral_lunge+lateral_raise+sumo_squat+good_morning": {
+"chiral": false,
+"mirror_score": 0.884,
+"threshold": 0.45
+},
+"combo.lateral_lunge+standing_crunch": {
+"chiral": false,
+"mirror_score": 0.64,
+"threshold": 0.45
+},
+"combo.lateral_raise+front_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.lead_backfist+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_body_hook+jab+rear_hook": {
+"chiral": true,
+"mirror_score": 0.065,
+"threshold": 0.45
+},
+"combo.lead_body_hook+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.679
+},
+"combo.lead_body_hook+rear_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_body_hook+rear_elbow+jab+cross": {
+"chiral": true,
+"mirror_score": 0.049,
+"threshold": 0.45
+},
+"combo.lead_body_hook+rear_shovel": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_check+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_check+rear_front_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_elbow+lead_uppercut+overhand": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.699
+},
+"combo.lead_elbow+rear_elbow": {
+"chiral": true,
+"mirror_score": 0.014,
+"threshold": 0.45
+},
+"combo.lead_elbow+rear_hook+rear_body_cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_hook+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.451
+},
+"combo.lead_hook+lead_uppercut+lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_hook+rear_mid_round": {
+"chiral": true,
+"mirror_score": 0.069,
+"threshold": 0.45
+},
+"combo.lead_knee+rear_front_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_low_round+cross": {
+"chiral": true,
+"mirror_score": 0.03,
+"threshold": 0.45
+},
+"combo.lead_low_round+lead_side_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.lead_low_round+rear_low_round": {
+"chiral": true,
+"mirror_score": 0.166,
+"threshold": 0.45
+},
+"combo.lead_oblique+cross+lead_hook": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.45
+},
+"combo.lead_oblique+lead_low_round": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_oblique+lead_side_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.457
+},
+"combo.lead_oblique+rear_front_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_oblique+switch_kick+lead_teep": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.lead_teep+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_teep+jab+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_teep+rear_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_uppercut+overhand": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.lead_uppercut+rear_elbow+lead_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lead_uppercut+rear_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.672
+},
+"combo.lean_left+rear_hook": {
+"chiral": true,
+"mirror_score": 0.01,
+"threshold": 0.45
+},
+"combo.lean_right+elbow_block": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.lean_right+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.level_change+penetration_step": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.level_change+snap_down": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.level_change+sprawl": {
+"chiral": false,
+"mirror_score": 0.66,
+"threshold": 0.45
+},
+"combo.lunge_fwd+torso_twist": {
+"chiral": true,
+"mirror_score": 0.668,
+"threshold": 0.72
+},
+"combo.macarena_arms+floss+step_touch": {
+"chiral": false,
+"mirror_score": 0.68,
+"threshold": 0.45
+},
+"combo.macarena_arms+salsa_basic+releve": {
+"chiral": false,
+"mirror_score": 0.733,
+"threshold": 0.549
+},
+"combo.mae_geri+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.037,
+"threshold": 0.75
+},
+"combo.mawashi_geri+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.mireo_chagi+ap_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.mireo_chagi+dollyo_chagi": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.519
+},
+"combo.mireo_chagi+kyorugi_punch+dollyo_chagi": {
+"chiral": true,
+"mirror_score": 0.071,
+"threshold": 0.45
+},
+"combo.momtong_an_makki+momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.198,
+"threshold": 0.45
+},
+"combo.momtong_bakkat_makki+arae_makki+palkup_dollyo_chigi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.momtong_bakkat_makki+deung_jumeok": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.momtong_bakkat_makki+momtong_jireugi+momtong_an_makki": {
+"chiral": true,
+"mirror_score": 0.126,
+"threshold": 0.45
+},
+"combo.momtong_bakkat_makki+momtong_jireugi+olgul_makki": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"combo.momtong_bakkat_makki+sonnal_mok_chigi+arae_makki": {
+"chiral": true,
+"mirror_score": 0.053,
+"threshold": 0.45
+},
+"combo.naeryo_chagi+mireo_chagi+kyorugi_punch+ap_ollyeo_chagi": {
+"chiral": true,
+"mirror_score": 0.031,
+"threshold": 0.45
+},
+"combo.needle_sea+brush_knee_l": {
+"chiral": true,
+"mirror_score": 0.08,
+"threshold": 0.45
+},
+"combo.nukite+age_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.nukite+kizami_zuki+empi_uchi": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.498
+},
+"combo.o_goshi_entry+seoi_nage_full": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"combo.olgul_makki+momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.olgul_makki+sonnal_makki": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.45
+},
+"combo.ouchi_gari+osoto_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ouchi_gari+seoi_nage_entry+harai_goshi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.overhand+lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.633
+},
+"combo.overhand+rear_up_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.owl_gazes_back+brush_knee_l": {
+"chiral": true,
+"mirror_score": 0.512,
+"threshold": 0.612
+},
+"combo.palkup_dollyo_chigi+deung_jumeok+hecheo_makki+momtong_bakkat_makki": {
+"chiral": true,
+"mirror_score": 0.04,
+"threshold": 0.45
+},
+"combo.parry+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.passe+body_roll": {
+"chiral": false,
+"mirror_score": 0.755,
+"threshold": 0.492
+},
+"combo.passe+dab": {
+"chiral": true,
+"mirror_score": 0.441,
+"threshold": 0.45
+},
+"combo.penetration_step+double_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.phone_call+point_forward": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.479
+},
+"combo.pivot+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.play_lute+commencement+fan_through_back": {
+"chiral": true,
+"mirror_score": 0.557,
+"threshold": 0.6
+},
+"combo.plie_first+jazz_hands": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.694
+},
+"combo.plie_first+releve": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.632
+},
+"combo.plie_first+tendu+arabesque": {
+"chiral": false,
+"mirror_score": 0.594,
+"threshold": 0.548
+},
+"combo.plie_first+ymca_m": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.plie_second+plie_first+salsa_basic": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.68
+},
+"combo.plum_knee+clinch_elbow": {
+"chiral": true,
+"mirror_score": 0.059,
+"threshold": 0.45
+},
+"combo.plum_knee+frame_push+clinch_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.plum_knee+plum_knee": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.point_forward+come_here": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.673
+},
+"combo.point_forward+facepalm+clap": {
+"chiral": true,
+"mirror_score": 0.08,
+"threshold": 0.45
+},
+"combo.port_de_bras+plie_second": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.press+push": {
+"chiral": false,
+"mirror_score": 0.769,
+"threshold": 0.728
+},
+"combo.pull_back+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.576
+},
+"combo.pull_back+pivot+shoulder_roll": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.pummel+collar_tie": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.pummel+whizzer": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.push+cross_hands": {
+"chiral": false,
+"mirror_score": 0.827,
+"threshold": 0.735
+},
+"combo.push+hold_feet+shuttle_l": {
+"chiral": false,
+"mirror_score": 0.72,
+"threshold": 0.45
+},
+"combo.quad_stretch+squat+lateral_lunge": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.raise_roof+jazz_hands": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.555
+},
+"combo.rear_body_cross+cross+double_jab": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"combo.rear_body_cross+cross+lead_hook+rear_shovel": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_body_cross+jab+rear_hook": {
+"chiral": true,
+"mirror_score": 0.035,
+"threshold": 0.45
+},
+"combo.rear_body_cross+lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_body_cross+lead_elbow+rear_shovel": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_body_cross+rear_uppercut": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_elbow+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_front_kick+cross": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.45
+},
+"combo.rear_front_kick+lead_oblique": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_front_kick+lead_oblique+rear_low_round": {
+"chiral": true,
+"mirror_score": 0.119,
+"threshold": 0.75
+},
+"combo.rear_front_kick+switch_kick+lead_teep+lead_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.rear_hook+lead_body_hook": {
+"chiral": true,
+"mirror_score": 0.045,
+"threshold": 0.45
+},
+"combo.rear_knee+rear_teep+lead_teep": {
+"chiral": true,
+"mirror_score": 0.061,
+"threshold": 0.45
+},
+"combo.rear_knee+switch_kick+lead_check": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_low_round+switch_kick+lead_knee": {
+"chiral": true,
+"mirror_score": 0.219,
+"threshold": 0.45
+},
+"combo.rear_mid_round+lead_oblique": {
+"chiral": true,
+"mirror_score": 0.018,
+"threshold": 0.75
+},
+"combo.rear_mid_round+lead_side_kick+lead_oblique": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.45
+},
+"combo.rear_mid_round+lead_teep": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"combo.rear_mid_round+rear_knee": {
+"chiral": true,
+"mirror_score": 0.079,
+"threshold": 0.45
+},
+"combo.rear_side_knee+lead_low_round": {
+"chiral": true,
+"mirror_score": 0.013,
+"threshold": 0.45
+},
+"combo.rear_side_knee+rear_low_round+rear_mid_round+lead_teep": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.45
+},
+"combo.rear_side_knee+switch_kick+lead_teep": {
+"chiral": true,
+"mirror_score": 0.006,
+"threshold": 0.45
+},
+"combo.rear_teep+jab": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_teep+rear_front_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.rear_teep+rear_mid_round": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.494
+},
+"combo.rear_up_elbow+rear_body_cross+lead_uppercut": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.rear_uppercut+lead_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.releve+running_man": {
+"chiral": false,
+"mirror_score": 0.752,
+"threshold": 0.483
+},
+"combo.repulse_monkey+ward_off_l": {
+"chiral": true,
+"mirror_score": 0.155,
+"threshold": 0.45
+},
+"combo.reverse_lunge+knee_hug": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"combo.robot_arms+egyptian": {
+"chiral": true,
+"mirror_score": 0.153,
+"threshold": 0.45
+},
+"combo.robot_arms+step_touch": {
+"chiral": false,
+"mirror_score": 0.57,
+"threshold": 0.45
+},
+"combo.roll_lr+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.505
+},
+"combo.roll_lr+roll_rl": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.roll_rl+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.667
+},
+"combo.running_man+raise_roof": {
+"chiral": false,
+"mirror_score": 0.793,
+"threshold": 0.45
+},
+"combo.salsa_basic+hip_sway": {
+"chiral": false,
+"mirror_score": 0.581,
+"threshold": 0.45
+},
+"combo.salute+golf_swing": {
+"chiral": true,
+"mirror_score": 0.122,
+"threshold": 0.45
+},
+"combo.salute+phone_call+scratch_head": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.seoi_nage_full+ouchi_gari+harai_goshi+kuzushi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.separate_heaven_earth+shuttle_l": {
+"chiral": true,
+"mirror_score": 0.217,
+"threshold": 0.45
+},
+"combo.shoulder_press+step_jack+lateral_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.606
+},
+"combo.shoulder_roll+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.shrug+facepalm": {
+"chiral": true,
+"mirror_score": 0.062,
+"threshold": 0.45
+},
+"combo.shuto_uke+nukite": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.shuttle_l+needle_sea+fan_through_back": {
+"chiral": true,
+"mirror_score": 0.448,
+"threshold": 0.45
+},
+"combo.shuttle_l+press": {
+"chiral": true,
+"mirror_score": 0.405,
+"threshold": 0.458
+},
+"combo.side_bend+calf_raise": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.side_bend+calf_raise+reverse_lunge+lateral_lunge": {
+"chiral": true,
+"mirror_score": 0.003,
+"threshold": 0.45
+},
+"combo.side_bend+high_knees+sumo_squat": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.side_bend+step_jack": {
+"chiral": true,
+"mirror_score": 0.091,
+"threshold": 0.45
+},
+"combo.side_bend+torso_twist": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.side_bend+triceps_ext+sumo_squat+wood_chop": {
+"chiral": true,
+"mirror_score": 0.002,
+"threshold": 0.45
+},
+"combo.single_leg+hand_fight+pummel": {
+"chiral": true,
+"mirror_score": 0.009,
+"threshold": 0.45
+},
+"combo.single_whip+cloud_hands": {
+"chiral": true,
+"mirror_score": 0.067,
+"threshold": 0.45
+},
+"combo.single_whip+press+separate_heaven_earth": {
+"chiral": true,
+"mirror_score": 0.222,
+"threshold": 0.45
+},
+"combo.slip_left+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.slip_left+parry+pivot": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.slip_left+roll_lr": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.slip_right+lead_hook": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.slip_right+lead_hook+rear_low_round": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.45
+},
+"combo.snap_down+double_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.sonnal_makki+momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.088,
+"threshold": 0.45
+},
+"combo.sonnal_mok_chigi+dubeon_jireugi+hecheo_makki": {
+"chiral": false,
+"mirror_score": 0.541,
+"threshold": 0.45
+},
+"combo.soto_uke+empi_uchi+uraken_uchi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.649
+},
+"combo.soto_uke+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.05,
+"threshold": 0.635
+},
+"combo.soto_uke+shuto_uke+gedan_barai+nukite": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.sprinkler+jazz_hands": {
+"chiral": true,
+"mirror_score": 0.351,
+"threshold": 0.473
+},
+"combo.sprinkler+lasso": {
+"chiral": true,
+"mirror_score": 0.219,
+"threshold": 0.45
+},
+"combo.sprinkler+plie_first": {
+"chiral": true,
+"mirror_score": 0.352,
+"threshold": 0.605
+},
+"combo.squat+front_raise+wood_chop": {
+"chiral": true,
+"mirror_score": 0.427,
+"threshold": 0.45
+},
+"combo.squat+lunge_fwd+reverse_lunge": {
+"chiral": true,
+"mirror_score": 0.35,
+"threshold": 0.45
+},
+"combo.squat+shoulder_press": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.step_back+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.step_back+shoulder_roll": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.741
+},
+"combo.step_jack+reverse_lunge+knee_hug": {
+"chiral": false,
+"mirror_score": 0.755,
+"threshold": 0.609
+},
+"combo.step_jack+squat": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.step_touch+cabbage_patch": {
+"chiral": false,
+"mirror_score": 0.84,
+"threshold": 0.45
+},
+"combo.step_touch+ymca_a+ymca_m": {
+"chiral": false,
+"mirror_score": 0.879,
+"threshold": 0.45
+},
+"combo.stretch_yawn+point_forward+salute": {
+"chiral": false,
+"mirror_score": 0.698,
+"threshold": 0.45
+},
+"combo.sumo_squat+upright_row": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.switch_kick+cross": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"combo.tai_otoshi+deashi_barai+kouchi_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.625
+},
+"combo.tendu+floss": {
+"chiral": false,
+"mirror_score": 0.835,
+"threshold": 0.75
+},
+"combo.tendu+passe": {
+"chiral": false,
+"mirror_score": 0.757,
+"threshold": 0.56
+},
+"combo.tennis_backhand+archery": {
+"chiral": true,
+"mirror_score": 0.203,
+"threshold": 0.45
+},
+"combo.tennis_forehand+tennis_backhand": {
+"chiral": true,
+"mirror_score": 0.046,
+"threshold": 0.45
+},
+"combo.tennis_serve+golf_swing": {
+"chiral": true,
+"mirror_score": 0.101,
+"threshold": 0.45
+},
+"combo.tennis_serve+tennis_forehand": {
+"chiral": true,
+"mirror_score": 0.031,
+"threshold": 0.45
+},
+"combo.tettsui+shuto_uke+age_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.453
+},
+"combo.tettsui+soto_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.tettsui+uchi_uke+age_uke+uraken_uchi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.triceps_ext+front_raise+step_jack": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.triceps_ext+squat+lunge_fwd+lateral_raise": {
+"chiral": false,
+"mirror_score": 0.83,
+"threshold": 0.45
+},
+"combo.twist+charleston": {
+"chiral": false,
+"mirror_score": 0.803,
+"threshold": 0.476
+},
+"combo.twist+step_touch+robot_arms+ymca_c": {
+"chiral": false,
+"mirror_score": 0.647,
+"threshold": 0.45
+},
+"combo.uchi_mata_entry+kuzushi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.uchi_mata_entry+ouchi_gari+osoto_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.uchi_mata_entry+seoi_nage_entry+harai_goshi+tai_otoshi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.uchi_uke+gyaku_zuki+nukite": {
+"chiral": true,
+"mirror_score": 0.069,
+"threshold": 0.571
+},
+"combo.uchi_uke+kizami_zuki+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.009,
+"threshold": 0.658
+},
+"combo.uchi_uke+mae_geri+age_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.uraken_uchi+gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.065,
+"threshold": 0.601
+},
+"combo.uraken_uchi+yoko_geri": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.vogue_frame+body_roll": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"combo.vogue_frame+ymca_a+disco_point": {
+"chiral": false,
+"mirror_score": 0.705,
+"threshold": 0.611
+},
+"combo.volleyball_dig+volleyball_set": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"combo.volleyball_set+archery": {
+"chiral": true,
+"mirror_score": 0.358,
+"threshold": 0.45
+},
+"combo.ward_off_l+roll_back": {
+"chiral": true,
+"mirror_score": 0.126,
+"threshold": 0.564
+},
+"combo.ward_off_l+roll_back+press+push": {
+"chiral": true,
+"mirror_score": 0.686,
+"threshold": 0.686
+},
+"combo.wave+salute": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.white_crane+brush_knee_l": {
+"chiral": true,
+"mirror_score": 0.131,
+"threshold": 0.45
+},
+"combo.white_crane+fan_through_back": {
+"chiral": true,
+"mirror_score": 0.254,
+"threshold": 0.658
+},
+"combo.white_crane+fan_through_back+owl_gazes_back": {
+"chiral": true,
+"mirror_score": 0.234,
+"threshold": 0.45
+},
+"combo.white_crane+shuttle_l": {
+"chiral": true,
+"mirror_score": 0.128,
+"threshold": 0.45
+},
+"combo.wild_horse_l+white_crane": {
+"chiral": true,
+"mirror_score": 0.335,
+"threshold": 0.75
+},
+"combo.windmill+biceps_curl": {
+"chiral": false,
+"mirror_score": 0.756,
+"threshold": 0.45
+},
+"combo.windmill+halo": {
+"chiral": false,
+"mirror_score": 0.766,
+"threshold": 0.45
+},
+"combo.windmill+upright_row": {
+"chiral": false,
+"mirror_score": 0.779,
+"threshold": 0.45
+},
+"combo.wood_chop+halo": {
+"chiral": true,
+"mirror_score": 0.415,
+"threshold": 0.45
+},
+"combo.yeop_chagi+an_chagi+ap_ollyeo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.yeop_chagi+ap_ollyeo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ymca_c+ymca_a": {
+"chiral": false,
+"mirror_score": 0.725,
+"threshold": 0.535
+},
+"combo.ymca_y+ymca_m": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.ymca_y+ymca_m+ymca_c+ymca_a": {
+"chiral": false,
+"mirror_score": 0.744,
+"threshold": 0.45
+},
+"combo.yoko_geri+kizami_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.yoko_geri+kizami_zuki+nukite": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.yoko_geri+nukite": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"combo.ytw+calf_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"combo.ytw+sumo_squat": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.archery": {
+"chiral": true,
+"mirror_score": 0.082,
+"threshold": 0.45
+},
+"daily.axe_chop": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.746
+},
+"daily.baseball_pitch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.baseball_swing": {
+"chiral": false,
+"mirror_score": 0.539,
+"threshold": 0.45
+},
+"daily.basketball_shot": {
+"chiral": false,
+"mirror_score": 0.569,
+"threshold": 0.45
+},
+"daily.bow": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.bowling": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"daily.check_watch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.clap": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"daily.come_here": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.739
+},
+"daily.drink": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"daily.drumming": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.622
+},
+"daily.facepalm": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.fishing_cast": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.golf_swing": {
+"chiral": true,
+"mirror_score": 0.559,
+"threshold": 0.663
+},
+"daily.look_around": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.phone_call": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.point_forward": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"daily.salute": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.scratch_head": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.shrug": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.stretch_yawn": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.531
+},
+"daily.tennis_backhand": {
+"chiral": true,
+"mirror_score": 0.122,
+"threshold": 0.45
+},
+"daily.tennis_forehand": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.tennis_serve": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"daily.volleyball_dig": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.volleyball_set": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"daily.wave": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.711
+},
+"dance.arabesque": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"dance.body_roll": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.cabbage_patch": {
+"chiral": false,
+"mirror_score": 0.802,
+"threshold": 0.45
+},
+"dance.charleston": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"dance.chicken_dance": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.dab": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"dance.disco_point": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.658
+},
+"dance.egyptian": {
+"chiral": true,
+"mirror_score": 0.005,
+"threshold": 0.75
+},
+"dance.fifth_arms": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.first_position": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.632
+},
+"dance.floss": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"dance.hip_sway": {
+"chiral": true,
+"mirror_score": 0.198,
+"threshold": 0.45
+},
+"dance.jazz_hands": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.485
+},
+"dance.lasso": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"dance.macarena_arms": {
+"chiral": false,
+"mirror_score": 0.569,
+"threshold": 0.45
+},
+"dance.passe": {
+"chiral": true,
+"mirror_score": 0.712,
+"threshold": 0.75
+},
+"dance.plie_first": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.plie_second": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.port_de_bras": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.raise_roof": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"dance.releve": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.513
+},
+"dance.robot_arms": {
+"chiral": true,
+"mirror_score": 0.215,
+"threshold": 0.45
+},
+"dance.running_man": {
+"chiral": false,
+"mirror_score": 0.657,
+"threshold": 0.45
+},
+"dance.salsa_basic": {
+"chiral": false,
+"mirror_score": 0.884,
+"threshold": 0.45
+},
+"dance.second_position": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.617
+},
+"dance.sprinkler": {
+"chiral": true,
+"mirror_score": 0.222,
+"threshold": 0.642
+},
+"dance.step_touch": {
+"chiral": false,
+"mirror_score": 0.882,
+"threshold": 0.454
+},
+"dance.tendu": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"dance.twist": {
+"chiral": false,
+"mirror_score": 0.785,
+"threshold": 0.661
+},
+"dance.vogue_frame": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.ymca_a": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.532
+},
+"dance.ymca_c": {
+"chiral": true,
+"mirror_score": 0.731,
+"threshold": 0.75
+},
+"dance.ymca_m": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"dance.ymca_y": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"evade.catch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.cross_guard": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.duck": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.elbow_block": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.high_guard": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.lean_left": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.lean_right": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.parry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.pivot": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.pull_back": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.roll_lr": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.roll_rl": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.shoulder_roll": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.slip_left": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.slip_right": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"evade.step_back": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"fit.arm_circles": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.biceps_curl": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.554
+},
+"fit.butt_kicks": {
+"chiral": true,
+"mirror_score": 0.217,
+"threshold": 0.45
+},
+"fit.calf_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.curtsy_lunge": {
+"chiral": true,
+"mirror_score": 0.239,
+"threshold": 0.45
+},
+"fit.front_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.good_morning": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.711
+},
+"fit.halo": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.high_knees": {
+"chiral": true,
+"mirror_score": 0.201,
+"threshold": 0.45
+},
+"fit.hip_abduction": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"fit.knee_hug": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"fit.lateral_lunge": {
+"chiral": false,
+"mirror_score": 0.874,
+"threshold": 0.45
+},
+"fit.lateral_raise": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.636
+},
+"fit.lunge_fwd": {
+"chiral": true,
+"mirror_score": 0.19,
+"threshold": 0.45
+},
+"fit.quad_stretch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"fit.reverse_lunge": {
+"chiral": true,
+"mirror_score": 0.03,
+"threshold": 0.45
+},
+"fit.shoulder_press": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.739
+},
+"fit.side_bend": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"fit.squat": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"fit.standing_crunch": {
+"chiral": false,
+"mirror_score": 0.573,
+"threshold": 0.45
+},
+"fit.step_jack": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.542
+},
+"fit.sumo_squat": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.torso_twist": {
+"chiral": false,
+"mirror_score": 0.775,
+"threshold": 0.45
+},
+"fit.triceps_ext": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.upright_row": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"fit.windmill": {
+"chiral": false,
+"mirror_score": 0.622,
+"threshold": 0.45
+},
+"fit.wood_chop": {
+"chiral": false,
+"mirror_score": 0.661,
+"threshold": 0.554
+},
+"fit.ytw": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.7
+},
+"grapple.arm_drag": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"grapple.body_lock": {
+"chiral": false,
+"mirror_score": 0.856,
+"threshold": 0.45
+},
+"grapple.clinch_elbow": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.collar_tie": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.deashi_barai": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.double_leg": {
+"chiral": true,
+"mirror_score": 0.006,
+"threshold": 0.59
+},
+"grapple.frame_push": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.hand_fight": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.harai_goshi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.kouchi_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.kuzushi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.646
+},
+"grapple.level_change": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.o_goshi_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.osoto_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.ouchi_gari": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.penetration_step": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.plum_knee": {
+"chiral": true,
+"mirror_score": 0.004,
+"threshold": 0.45
+},
+"grapple.pummel": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.seoi_nage_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.543
+},
+"grapple.seoi_nage_full": {
+"chiral": true,
+"mirror_score": 0.066,
+"threshold": 0.45
+},
+"grapple.single_leg": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"grapple.snap_down": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.sprawl": {
+"chiral": false,
+"mirror_score": 0.566,
+"threshold": 0.45
+},
+"grapple.tai_otoshi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"grapple.uchi_mata_entry": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"grapple.whizzer": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.age_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.empi_uchi": {
+"chiral": true,
+"mirror_score": 0.152,
+"threshold": 0.698
+},
+"karate.gedan_barai": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.gyaku_zuki": {
+"chiral": true,
+"mirror_score": 0.043,
+"threshold": 0.75
+},
+"karate.kiba_dachi": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.628
+},
+"karate.kiba_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.kizami_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.kokutsu_dachi": {
+"chiral": true,
+"mirror_score": 0.327,
+"threshold": 0.62
+},
+"karate.mae_geri": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.713
+},
+"karate.mawashi_geri": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.nukite": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.oi_zuki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.shuto_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.soto_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.tettsui": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.uchi_uke": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.uraken_uchi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"karate.yoko_geri": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"karate.zenkutsu_dachi": {
+"chiral": true,
+"mirror_score": 0.379,
+"threshold": 0.75
+},
+"kick.knee_lift": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.lead_check": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.lead_knee": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.lead_low_round": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.lead_oblique": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"kick.lead_side_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.lead_teep": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.rear_front_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.rear_knee": {
+"chiral": true,
+"mirror_score": 0.128,
+"threshold": 0.45
+},
+"kick.rear_low_round": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"kick.rear_mid_round": {
+"chiral": true,
+"mirror_score": 0.076,
+"threshold": 0.75
+},
+"kick.rear_side_knee": {
+"chiral": true,
+"mirror_score": 0.008,
+"threshold": 0.45
+},
+"kick.rear_teep": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"kick.switch_kick": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"pose.airplane": {
+"chiral": true,
+"mirror_score": 0.346,
+"threshold": 0.45
+},
+"pose.archer": {
+"chiral": true,
+"mirror_score": 0.305,
+"threshold": 0.45
+},
+"pose.arms_crossed": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.703
+},
+"pose.cat_stance": {
+"chiral": true,
+"mirror_score": 0.481,
+"threshold": 0.68
+},
+"pose.chair": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.544
+},
+"pose.crane_kungfu": {
+"chiral": true,
+"mirror_score": 0.232,
+"threshold": 0.45
+},
+"pose.crescent_lunge": {
+"chiral": false,
+"mirror_score": 0.627,
+"threshold": 0.505
+},
+"pose.dancer_l": {
+"chiral": true,
+"mirror_score": 0.114,
+"threshold": 0.45
+},
+"pose.double_biceps": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.556
+},
+"pose.eagle": {
+"chiral": false,
+"mirror_score": 0.829,
+"threshold": 0.575
+},
+"pose.flamingo_l": {
+"chiral": true,
+"mirror_score": 0.486,
+"threshold": 0.553
+},
+"pose.goddess": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.571
+},
+"pose.guard_hold": {
+"chiral": false,
+"mirror_score": 0.72,
+"threshold": 0.455
+},
+"pose.hands_hips": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"pose.knee_up_hold": {
+"chiral": false,
+"mirror_score": 0.668,
+"threshold": 0.66
+},
+"pose.liberty": {
+"chiral": true,
+"mirror_score": 0.152,
+"threshold": 0.45
+},
+"pose.mountain": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.75
+},
+"pose.prayer": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.743
+},
+"pose.star": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.64
+},
+"pose.stop_sign": {
+"chiral": true,
+"mirror_score": 0.466,
+"threshold": 0.534
+},
+"pose.superhero": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.747
+},
+"pose.t_pose": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.548
+},
+"pose.thinker": {
+"chiral": true,
+"mirror_score": 0.254,
+"threshold": 0.546
+},
+"pose.tiger_claw": {
+"chiral": true,
+"mirror_score": 0.357,
+"threshold": 0.619
+},
+"pose.tree_l": {
+"chiral": false,
+"mirror_score": 0.679,
+"threshold": 0.451
+},
+"pose.triangle_l": {
+"chiral": true,
+"mirror_score": 0.137,
+"threshold": 0.45
+},
+"pose.warrior1_l": {
+"chiral": true,
+"mirror_score": 0.68,
+"threshold": 0.75
+},
+"pose.warrior2_l": {
+"chiral": true,
+"mirror_score": 0.191,
+"threshold": 0.45
+},
+"pose.warrior3_l": {
+"chiral": true,
+"mirror_score": 0.441,
+"threshold": 0.45
+},
+"pose.y_pose": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.572
+},
+"qigong.angry_eyes_punch": {
+"chiral": true,
+"mirror_score": 0.165,
+"threshold": 0.45
+},
+"qigong.bounce_toes": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"qigong.draw_bow_l": {
+"chiral": true,
+"mirror_score": 0.042,
+"threshold": 0.45
+},
+"qigong.hold_feet": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"qigong.hold_heavens": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.539
+},
+"qigong.owl_gazes_back": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"qigong.separate_heaven_earth": {
+"chiral": true,
+"mirror_score": 0.245,
+"threshold": 0.45
+},
+"qigong.sway_head_tail": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"taichi.brush_knee_l": {
+"chiral": true,
+"mirror_score": 0.011,
+"threshold": 0.706
+},
+"taichi.cloud_hands": {
+"chiral": true,
+"mirror_score": 0.355,
+"threshold": 0.715
+},
+"taichi.commencement": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.45
+},
+"taichi.cross_hands": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.595
+},
+"taichi.fan_through_back": {
+"chiral": true,
+"mirror_score": 0.052,
+"threshold": 0.693
+},
+"taichi.golden_rooster_l": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"taichi.high_pat": {
+"chiral": true,
+"mirror_score": 0.009,
+"threshold": 0.75
+},
+"taichi.needle_sea": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"taichi.play_lute": {
+"chiral": false,
+"mirror_score": 0.762,
+"threshold": 0.69
+},
+"taichi.press": {
+"chiral": false,
+"mirror_score": 0.69,
+"threshold": 0.671
+},
+"taichi.push": {
+"chiral": false,
+"mirror_score": 0.768,
+"threshold": 0.75
+},
+"taichi.repulse_monkey": {
+"chiral": true,
+"mirror_score": 0.122,
+"threshold": 0.45
+},
+"taichi.roll_back": {
+"chiral": true,
+"mirror_score": 0.047,
+"threshold": 0.75
+},
+"taichi.shuttle_l": {
+"chiral": true,
+"mirror_score": 0.228,
+"threshold": 0.554
+},
+"taichi.single_whip": {
+"chiral": true,
+"mirror_score": 0.001,
+"threshold": 0.45
+},
+"taichi.ward_off_l": {
+"chiral": true,
+"mirror_score": 0.051,
+"threshold": 0.532
+},
+"taichi.white_crane": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"taichi.wild_horse_l": {
+"chiral": true,
+"mirror_score": 0.038,
+"threshold": 0.75
+},
+"tkd.an_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.ap_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.587
+},
+"tkd.ap_kubi": {
+"chiral": true,
+"mirror_score": 0.407,
+"threshold": 0.75
+},
+"tkd.ap_ollyeo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.ap_seogi": {
+"chiral": false,
+"mirror_score": 0.888,
+"threshold": 0.75
+},
+"tkd.arae_makki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.bakkat_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.bandal_chagi": {
+"chiral": true,
+"mirror_score": 0.009,
+"threshold": 0.75
+},
+"tkd.beom_seogi": {
+"chiral": true,
+"mirror_score": 0.519,
+"threshold": 0.75
+},
+"tkd.deung_jumeok": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.dollyo_chagi": {
+"chiral": true,
+"mirror_score": 0.007,
+"threshold": 0.75
+},
+"tkd.dubeon_jireugi": {
+"chiral": true,
+"mirror_score": 0.136,
+"threshold": 0.461
+},
+"tkd.dwit_kubi": {
+"chiral": true,
+"mirror_score": 0.329,
+"threshold": 0.75
+},
+"tkd.hecheo_makki": {
+"chiral": false,
+"mirror_score": 0.774,
+"threshold": 0.45
+},
+"tkd.juchum_seogi": {
+"chiral": false,
+"mirror_score": null,
+"threshold": 0.667
+},
+"tkd.kyorugi_punch": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.mireo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.momtong_an_makki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.momtong_bakkat_makki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.momtong_jireugi": {
+"chiral": true,
+"mirror_score": 0.038,
+"threshold": 0.45
+},
+"tkd.naeryo_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.57
+},
+"tkd.olgul_jireugi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.75
+},
+"tkd.olgul_makki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.palkup_dollyo_chigi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.sonnal_makki": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.sonnal_mok_chigi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+},
+"tkd.yeop_chagi": {
+"chiral": true,
+"mirror_score": 0.0,
+"threshold": 0.45
+}
+}

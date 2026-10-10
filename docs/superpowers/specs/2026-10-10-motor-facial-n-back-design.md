@@ -1,6 +1,6 @@
 # Motor & Facial N-Back — Design Spec (v1)
 
-Date: 2026-10-10 · Status: draft for review
+Date: 2026-10-10 · Status: implemented (v1)
 
 ## 1. Intent
 
@@ -92,12 +92,35 @@ are chained into combos of 2–4 segments → hundreds of items.
 
 **Tags per item**: `category`, `subcategory`, `complexity` 1–5 (1 = static posture,
 2 = single movement, 3 = 2-part combo or simultaneous arm+leg, 4 = 3-part, 5 = 4+ part),
-`flexibility` low/medium/high, `footprint_m` (computed), `duration_s`, `body_part`
+`flexibility` low/medium/high, `footprint_m` (computed), `rotation_deg` (computed), `duration_s`, `body_part`
 (upper/lower/full), `sided` (has a meaningful mirror), `source` (procedural/cmu).
 
-**Categories (v1 target ≥ 150 primitives, ≥ 500 items with combos)**: static postures (yoga,
-stances, gestures), boxing, kicks & knees (low/mid only), karate basics, tai chi & qigong
-(Ba Duan Jin), dance (in-place), fitness/calisthenics, everyday gestures & sports swings.
+**Categories (v1 target ≥ 150 primitives, ≥ 500 items with combos)**:
+
+| Category | Sub-categories / examples |
+|---|---|
+| Static postures | yoga, martial stances, gestures, balance holds |
+| Boxing | jab, cross, hooks, uppercuts, body shots, elbows; combos |
+| Evasion & defense | slips, rolls (bob & weave), pull-back, duck, shoulder roll, parries, catch; slip-and-counter combos |
+| Kicks & knees | front, push (teep), low/mid roundhouse, side, knees, checks — no spinning kicks |
+| Taekwondo | stances (ap/dwit kubi, juchum seogi, beom seogi), makki blocks, jireugi punches, sonnal strikes, ap/dollyo/yeop/naeryo/bandal/mireo chagi, in-place poomsae fragments |
+| Karate | uke blocks, zuki punches, geri kicks, kata fragments |
+| Shadow grappling | solo mimicry of partner techniques: judo uchikomi (seoi nage, osoto gari, o goshi, uchi mata entries, kuzushi pulls), wrestling (level change, short penetration step, sprawl, snap-down, arm drag, pummeling), clinch (collar tie, Thai plum + knees, body lock, frames) |
+| Tai chi & qigong | Ba Duan Jin, cloud hands, single whip, white crane, brush knee… |
+| Dance | in-place moves, arm patterns, ballet port de bras, pliés |
+| Fitness | squats, lunges, raises, twists, mobility drills |
+| Everyday & sports | gestures, throws, swings (golf, tennis, baseball) |
+
+Kick height and flexibility are tagged (high kicks only appear for `flexibility = high`).
+Moves that turn the back to the camera (e.g. a full seoi nage entry) carry `rotation_deg`;
+in-place adaptations (≤ 90° turn) are the default because monocular pose tracking confuses
+left/right when the user faces away. A profile switch allows the full-turn versions.
+
+No open mocap dataset was found for taekwondo, boxing defense or standing grappling
+(taekwondo poomsae datasets exist in papers but are not released; grappling data is either
+two-person research data without a clear licence, e.g. Harmony4D, or commercial). These
+categories are therefore authored procedurally; the importer remains open for any future
+BVH source.
 
 **Open-data import** — CMU Graphics Lab mocap (BVH via the MIT-licensed `adventuring/mocap`
 GitHub mirror; CMU terms: free use, no resale). Pipeline: parse BVH → canonical joints →
@@ -121,19 +144,38 @@ Converted clips ship in the repo as a compact pack; the importer is a CLI for ad
 
 ## 5. Scoring
 
-**Motor** (server, numpy):
+**Motor** (server, numpy + `dtaidistance`):
+
+Why not frame-by-frame pose matching (Mime Flow style)? Mime Flow compares each webcam frame
+with the reference frames inside a ~330 ms buffer, which only works when the user follows the
+video *in sync*. In the N-back the user performs from memory, later, at their own tempo, so
+the comparison must be a *temporal alignment* of two sequences, not a pose-by-pose check.
+Discretising a move into key poses alone loses the trajectory (a hook and a straight punch
+can end in similar poses), so key poses are used for feedback, not as the score.
+
 1. Client sends the response window's canonical joints + visibility + timestamps.
-2. Features per frame: unit bone directions (≈16 bones; head/hands/feet down-weighted;
-   z down-weighted because monocular depth is noisy; low visibility → low weight). Bone
-   directions are body-size invariant (body calibration feeds proportions to the renderer
-   and normalises pelvis displacement by leg length).
-3. Trim idle time by motion energy; resample to a fixed length; DTW with a Sakoe-Chiba band;
-   static postures use the best sustained 0.8 s hold instead.
+2. Features per frame (ported from Mime Flow, MIT): unit bone directions weighted by joint
+   importance and visibility (≈16 bones; head/hands/feet down-weighted; z down-weighted
+   because monocular depth is noisy). Bone directions are body-size invariant (body
+   calibration feeds proportions to the renderer and normalises pelvis displacement by leg
+   length). First derivatives are added so the alignment sees the motion's shape as well as
+   its poses.
+3. **Subsequence DTW** (`dtaidistance`, Apache-2.0, C-accelerated, multi-dimensional): the
+   whole target is aligned to the best-matching part of the 2–3× response window, which
+   absorbs the idle time before and after the move and any tempo difference. Static postures
+   use the best sustained 0.8 s hold instead.
 4. Error → score in [0, 1] using per-bone angular tolerances; lower-body tolerance is
    scaled by the flexibility profile; global strictness slider.
-5. **Lure check**: the response is also scored against the other recent stimuli; the trial is
-   correct if the target score ≥ threshold (default 0.7) and the target is the best match
-   (±0.03). The report says "you performed trial t-1's move" when applicable.
+5. **Per-item acceptance threshold** (idea from the Jackknife recogniser, Taranta et al.,
+   CHI 2017; reimplemented from the paper because its code licence is academic-only): each
+   item's threshold is calibrated offline against synthetic negatives (other library items,
+   time-scrambled and spliced versions of itself), so easy and hard moves are judged fairly
+   instead of sharing one global cut-off.
+6. **Lure check**: the response is also scored against the other recent stimuli; the trial is
+   correct if the target passes its threshold and is the best match (±0.03). The report says
+   "you performed trial t-1's move" when applicable.
+7. **Key-pose feedback** (idea from A-MAL, ICCVW 2019): key poses are extracted from the target
+   at velocity minima; the report shows which key pose was missed and which bones were off.
 
 **Facial**: calibrated blendshapes `clip((r − neutral) × gain, 0, 1)`; best 0.5 s window;
 score = 0.7 × cosine + 0.3 × (1 − mean abs diff on active dims). Calibration = 3 s neutral
@@ -143,7 +185,8 @@ score = 0.7 × cosine + 0.3 × (1 − mean abs diff on active dims). Calibration
 
 - **Body calibration**: 3 s neutral stance → bone lengths (renderer proportions, leg length).
 - **Flexibility & space**: low/medium/high lower-body flexibility filters items and scales
-  leg tolerance; space limit filters by footprint.
+  leg tolerance; space limit filters by footprint; "allow turning away from camera" (off by
+  default) unlocks full-turn techniques.
 - **Laterality & view**: dominant side / guard (orthodox/southpaw, which flips stance-based
   items), stimulus view = mirror (default) / facing / from behind; L/R limb colour coding.
 - **Pacing & tolerance**: playback speed, response multiplier (2–3×), inter-trial pause,

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Motor &amp; Facial N-Back</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='6' r='4' fill='%234ea8ff'/%3E%3Cpath d='M16 10v10M16 13l-8 4M16 13l8-4M16 20l-6 9M16 20l6 9' stroke='%23ff9a3c' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/home"><span class="brand-mark">N</span><span>Motor &amp; Facial N-Back</span></a>
+    <nav class="nav" id="nav">
+      <a href="#/home" data-route="home">Home</a>
+      <a href="#/train/motor" data-route="train/motor">Motor</a>
+      <a href="#/train/facial" data-route="train/facial">Facial</a>
+      <a href="#/library" data-route="library">Library</a>
+      <a href="#/dashboard" data-route="dashboard">Progress</a>
+      <a href="#/settings" data-route="settings">Settings</a>
+    </nav>
+    <div class="profile-switch" id="profile-switch"></div>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+  <main id="app" class="app" aria-live="polite"></main>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
