@@ -61,7 +61,7 @@ class MotorScore:
     def to_dict(self) -> dict:
         return {
             "score": round(float(self.score), 4), "valid": self.valid, "reason": self.reason,
-            "matched": [round(self.matched[0], 2), round(self.matched[1], 2)],
+            "matched": [round(float(self.matched[0]), 2), round(float(self.matched[1]), 2)],
             "per_bone_deg": {k: round(v, 1) for k, v in self.per_bone_deg.items()},
             "worst_bones": self.worst_bones, "keyposes": self.keyposes,
         }
@@ -185,7 +185,7 @@ class Scorer:
         worst = sorted(per_bone, key=lambda n: -per_bone[n] * BONE_WEIGHTS[BONE_NAMES.index(n)])[:3]
         return MotorScore(score=score, matched=(j / FEATURE_FPS, (j + win) / FEATURE_FPS), per_bone_deg=per_bone,
                           worst_bones=worst, keyposes=[{"t_target": 0.0, "t_response": round(j / FEATURE_FPS, 2),
-                                                        "hit": smooth[j] < 1.0, "error": round(float(smooth[j]), 3)}])
+                                                        "hit": bool(smooth[j] < 1.0), "error": round(float(smooth[j]), 3)}])
 
 
 def keypose_indices(frames_30: np.ndarray, max_n: int = 4) -> list[int]:
