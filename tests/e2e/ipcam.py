@@ -81,14 +81,14 @@ def main():
         # the user picks "Phone over Wi-Fi" for the moves and types the address the phone app shows
         moves = page.locator("select[aria-label='Camera']").first
         moves.select_option(value="__network")
-        page.locator("input[placeholder^='e.g. 192.168']").first.fill(addr)
+        page.locator("input[placeholder^='address shown']").first.fill(addr)
         page.locator("button:has-text('Connect')").first.click()
         page.wait_for_selector("text=Connected: Phone over Wi-Fi", timeout=15000)
         page.screenshot(path=f"{OUT}/ipcam_settings.png", full_page=True)
         cams = api("GET", f"/api/profiles/{prof['id']}")["settings"]["cameras"]["motor"]
         assert cams.get("url", "").endswith("/video"), cams
         # a wrong address explains what to do
-        page.locator("input[placeholder^='e.g. 192.168']").first.fill("127.0.0.1:1")
+        page.locator("input[placeholder^='address shown']").first.fill("127.0.0.1:1")
         page.locator("button:has-text('Connect')").first.click()
         page.wait_for_selector("text=refused", timeout=15000)
         # camera check of a motor block, through the relay and MediaPipe

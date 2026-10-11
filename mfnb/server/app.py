@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 import numpy as np
 from pydantic import BaseModel, Field
@@ -93,28 +93,43 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
                 "default_settings": config.DEFAULT_SETTINGS,
                 "library": {"motor": trainer.motor.stats(), "facial": trainer.face.stats()}}
 
-    # phone camera over Wi-Fi: relay its MJPEG stream from this origin (the browser cannot read another origin)
+    # phone camera over Wi-Fi: the server reads its MJPEG stream and hands the page the newest frame (same origin)
+    def _camera_reader(url: str) -> "ipcam.Reader":
+        try:
+            return ipcam.reader(url)
+        except ipcam.CameraURLError as err:
+            raise HTTPException(400, str(err)) from None
+
+    def _camera_failed(r: "ipcam.Reader"):
+        err = r.error
+        if isinstance(err, ipcam.CameraURLError):
+            raise HTTPException(400, str(err))
+        raise HTTPException(502, ipcam.describe(err) if err else "The phone camera stopped.")
+
     @app.get("/api/camera/check")
     def camera_check(url: str):
-        try:
-            resp, ctype, used = ipcam.open_stream(url)
-        except ipcam.CameraURLError as err:
-            raise HTTPException(400, str(err)) from None
-        except (OSError, ValueError) as err:
-            raise HTTPException(502, ipcam.describe(err)) from None
-        resp.close()
-        return {"ok": True, "url": used, "content_type": ctype, "label": ipcam.label(used)}
+        r = _camera_reader(url)
+        seq, frame = r.next_frame(0, wait_s=ipcam.CONNECT_TIMEOUT_S + 2)
+        if frame is None:
+            if r.error is not None or not r.alive:
+                _camera_failed(r)
+            raise HTTPException(504, "The phone app answered but sent no picture: is its camera running?")
+        # the url keeps the login, if any: the page needs it to reconnect (it stays on this computer)
+        return {"ok": True, "url": r.used, "label": ipcam.label(r.used), "bytes": len(frame)}
 
-    @app.get("/api/camera/stream")
-    def camera_stream(url: str):
-        try:
-            resp, ctype, _ = ipcam.open_stream(url, timeout=ipcam.STREAM_TIMEOUT_S)
-        except ipcam.CameraURLError as err:
-            raise HTTPException(400, str(err)) from None
-        except (OSError, ValueError) as err:
-            raise HTTPException(502, ipcam.describe(err)) from None
-        return StreamingResponse(ipcam.iter_stream(resp), media_type=ctype,
-                                 headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    @app.get("/api/camera/frame")
+    def camera_frame(url: str, after: int = 0):
+        r = _camera_reader(url)
+        seq, frame = r.next_frame(after, wait_s=2.0)
+        if frame is None:
+            if r.error is not None or not r.alive:
+                _camera_failed(r)
+            return Response(status_code=204, headers={"X-Frame-Seq": str(seq), "Cache-Control": "no-store"})
+        return Response(frame, media_type="image/jpeg", headers={"X-Frame-Seq": str(seq), "Cache-Control": "no-store"})
+
+    @app.get("/api/camera/discover")
+    def camera_discover():
+        return {"found": ipcam.discover(), "gateways": ipcam.default_gateways()}
 
     @app.get("/api/assets/status")
     def assets_status():

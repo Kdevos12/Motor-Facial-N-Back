@@ -17,6 +17,16 @@ pip install -e .
 mfnb                                                     # opens http://127.0.0.1:8765
 ```
 
+To update later, from the folder where you cloned it (your profiles and progress in `~/.mfnb` are kept):
+
+```bash
+git pull
+source .venv/bin/activate && pip install -e .     # only needed when dependencies change; harmless otherwise
+mfnb                                              # or: mfnb --port 8790 if 8765 is taken
+```
+
+Then reload the page with Ctrl+Shift+R so the browser takes the new version.
+
 On first launch the app downloads MediaPipe (about 25 MB, once) into `~/.mfnb/assets`.
 After that it works offline. Everything (profiles, progress) stays in `~/.mfnb`; set
 `MFNB_HOME` to use another folder.
@@ -31,10 +41,13 @@ simulated user performs the moves, so you can see the full loop.
   filtered for 2–3 m² by default).
 - Camera too close, or training seated? Choose **Upper body** framing (Settings or the
   training page): head to mid-thigh in view, only arm and trunk moves, legs not scored.
-- **Use your phone as the camera** (scrcpy on Android, DroidCam on iPhone): see
-  [the guide](mfnb/web/help/phone-camera.md), also in the app. Settings → Cameras picks a
-  camera per game (e.g. the phone for moves, the laptop webcam for faces), with rotation
-  for a phone mounted sideways.
+- **Use your phone as the camera, over Wi-Fi, no cable**: install a camera app on the phone
+  (IP Webcam on Android), then Settings → Cameras → *Phone over Wi-Fi* and type the address
+  it shows. On a residence Wi-Fi that keeps devices apart, connect the computer to the
+  phone's hotspot and press *Find my phone*. No driver needed. A USB cable (scrcpy) also
+  works. See [the guide](mfnb/web/help/phone-camera.md), also in the app. Each game can use
+  its own camera (e.g. the phone for moves, the laptop webcam for faces), with rotation for
+  a phone mounted sideways.
 - **Face the screen**, not the camera. The camera may be off to one side (best within 30°,
   up to 45°): each motor block starts with 2 s standing still facing the screen, which
   measures the camera's angle, and scoring corrects for it.

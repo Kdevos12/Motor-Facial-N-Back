@@ -2,7 +2,7 @@
 import { api } from '../api.js';
 import { refreshProfile, setProfile, state } from '../state.js';
 import { h, toast } from '../ui.js';
-import { cameraKey, cameraPrefs, checkNetworkCamera, listCameras, liveCamera, onDeviceChange } from '../vision/camera.js';
+import { cameraKey, cameraPrefs, checkNetworkCamera, discoverNetworkCameras, listCameras, liveCamera, onDeviceChange } from '../vision/camera.js';
 
 // Options for a tracker reading this modality's camera.
 export function trackerOptions(modality) {
@@ -45,22 +45,33 @@ export function cameraPicker(modality, onChange) {
       h('option', { value: v, selected: Number(prefs.rotate || 0) === v }, l)));
   const note = h('span', { class: 'small muted' });
   // phone camera app over Wi-Fi (IP Webcam, DroidCam…)
-  const urlInput = h('input', { type: 'text', placeholder: 'e.g. 192.168.43.1:8080 (shown by the phone app)', value: prefs.url || '',
+  const urlInput = h('input', { type: 'text', placeholder: 'address shown by the phone app, e.g. 10.0.0.5:8080', value: prefs.url || '',
     style: { minWidth: '260px', flex: '1' } });
   const urlStatus = h('div', { class: 'small muted' });
-  const connect = h('button', { class: 'btn', type: 'button', onclick: async () => {
+  const connectTo = async (address) => {
     urlStatus.textContent = 'Connecting…';
     try {
-      const r = await checkNetworkCamera(urlInput.value);
+      const r = await checkNetworkCamera(address);
       urlInput.value = r.url;
       const p = await savePrefs(modality, { deviceId: '', label: r.label, url: r.url });
       urlStatus.textContent = `Connected: ${r.label}`;
       await fill();
       onChange && onChange(p);
     } catch (err) { urlStatus.textContent = err.message; }
-  } }, 'Connect');
+  };
+  const connect = h('button', { class: 'btn', type: 'button', onclick: () => connectTo(urlInput.value) }, 'Connect');
+  const find = h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+    urlStatus.textContent = 'Looking for a phone camera app on this network…';
+    const found = await discoverNetworkCameras().catch(() => []);
+    if (!found.length) {
+      urlStatus.textContent = 'None found. On the phone\'s hotspot, start the camera app (IP Webcam: Start server); otherwise type the address it shows.';
+      return;
+    }
+    urlInput.value = found[0].url;
+    await connectTo(found[0].url);
+  } }, 'Find my phone (hotspot)');
   const urlRow = h('div', { class: 'stack', style: { gap: '4px' } },
-    h('div', { class: 'row', style: { flexWrap: 'wrap' } }, urlInput, connect), urlStatus,
+    h('div', { class: 'row', style: { flexWrap: 'wrap' } }, urlInput, connect, find), urlStatus,
     h('div', { class: 'small muted' }, 'Start the camera app on the phone (e.g. IP Webcam → Start server), then type the address it shows. ',
       h('a', { href: '#/help/camera' }, 'Guide')));
   urlRow.hidden = !prefs.url;
