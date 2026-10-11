@@ -10,8 +10,9 @@ trunk moves are used and the legs are not scored.
 
 ## Over Wi-Fi (Android, no cable)
 
-**1. The camera app.** Install **IP Webcam** by Pavel Khlebovich from the Play Store (free with ads; check the
-developer name, many apps look alike). Then:
+**1. The camera app.** Install **IP Webcam** from the Play Store (free with ads). Many apps look alike: the right
+one's Play Store address ends in `id=com.pas.webcam`; its developer shows as Pavel Khlebovich or Thyoni Tech (his
+company). Then:
 
 - In *Video preferences*: back camera, video resolution **1280×720** (lower it if the picture lags), quality
   about **60**, orientation **portrait** if the phone stands upright.
@@ -70,8 +71,11 @@ the rules.
 - If the picture freezes, the block pauses and tells you; fix the phone (screen, app, Wi-Fi), then *Resume*.
 - If IP Webcam asks for a login, put it in the address: `http://user:password@10.20.30.40:8080`. It is stored
   only on this computer.
-- Open-source alternative: *Android IP Camera* (F-Droid). Set a username and password, set TLS to *HTTP only*,
-  and use `http://user:password@PHONE-IP:4444/video/mjpeg`.
+- Open-source alternative: *Android IP Camera* (F-Droid or its GitHub releases). Set a username and password in
+  its settings, set TLS to *HTTP only*, and use `http://user:password@PHONE-IP:4444`. It blocks a computer for 15
+  minutes after 5 failed logins, so type the login carefully.
+- Use the phone for the moves and keep the laptop webcam for the face games: a face 2–3 m away is too small for
+  reliable expressions.
 
 ## With a USB cable (Android): scrcpy
 
@@ -83,8 +87,8 @@ sudo apt install -y v4l2loopback-dkms v4l2loopback-utils v4l-utils
 sudo modprobe v4l2loopback devices=1 video_nr=9 card_label="Phone (scrcpy)" exclusive_caps=1
 ```
 
-- With **Secure Boot** on, the install asks for a password to enroll a key (MOK): reboot, choose *Enroll MOK* on
-  the blue screen and type that password; otherwise the module is refused.
+- Pop!_OS normally runs with Secure Boot off, so the module loads as is. If `modprobe` answers *Key was rejected
+  by service*, Secure Boot is on (check with `mokutil --sb-state`): turn it off in the computer's firmware setup.
 - If `modprobe` fails after a kernel update: `sudo apt reinstall v4l2loopback-dkms`.
 
 scrcpy 5.0.1 (the Ubuntu package is too old for camera capture; this build includes `adb`):
@@ -109,13 +113,15 @@ in, accept the prompt, then start the camera **before** opening the app page:
   replace `--camera-facing=back` with `--camera-id=<its id>` (the two cannot be combined).
 - Phone upright: choose *Rotate 90°* in the app's camera settings (or add `--capture-orientation=90`).
 - Leave the terminal open while you train. In the app, choose **Phone (scrcpy)** in Settings → Cameras.
-- scrcpy without the cable over the phone's hotspot needs one short cable connection first (`./adb tcpip 5555`,
-  then unplug and `./adb connect PHONE-IP:5555`): Android's *Wireless debugging* does not turn on while the phone
-  is a hotspot.
+- scrcpy without any cable: Android's *Wireless debugging* only turns on when the phone is connected to a Wi-Fi
+  network, not while it hosts a hotspot. Use the Wi-Fi method above instead, or a short cable once
+  (`./adb tcpip 5555`, unplug, then `./adb connect PHONE-IP:5555`). Use the `./adb` that comes with scrcpy, not
+  the system one.
 
-Browsers and virtual cameras: **Chrome or Chromium** works best. **Firefox** may not list the scrcpy camera: open
-`about:config`, set `media.webrtc.camera.allow-pipewire` to `false`, restart Firefox. A browser installed as a
-**Flatpak** needs access to devices (with Flatseal: *All devices*). The Wi-Fi method above needs none of this.
+Browsers and virtual cameras: start scrcpy **before** opening the page (the virtual camera only appears while
+something feeds it), then reload. If Firefox still does not list it, check in `about:config` that
+`media.webrtc.camera.allow-pipewire` is `false`. A browser installed as a **Flatpak** needs access to devices (with
+Flatseal: *All devices*). The Wi-Fi method above needs none of this.
 
 ## iPhone
 

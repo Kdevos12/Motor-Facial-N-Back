@@ -48,6 +48,10 @@ class FakePhone(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(jpeg(7))
             return
+        if self.path in ("/forbidden/video", "/blocked/video"):
+            self.send_response(403 if self.path.startswith("/forbidden") else 429)
+            self.end_headers()
+            return
         if self.path == "/locked/video":
             ok = base64.b64encode(b"me:secret").decode()
             if self.headers.get("Authorization") != f"Basic {ok}":
@@ -142,3 +146,10 @@ def test_discover_on_the_gateway(phone, monkeypatch):
     found = ipcam.discover([host, "8.8.8.8"])
     assert [f["url"] for f in found] == [f"http://{phone}/video"]
     assert isinstance(ipcam.default_gateways(), list)
+
+
+def test_refused_logins_are_explained(client, phone):
+    r = client.get("/api/camera/check", params={"url": f"http://{phone}/forbidden/video"})
+    assert r.status_code == 502 and "username and password" in r.json()["detail"]
+    r = client.get("/api/camera/check", params={"url": f"http://{phone}/blocked/video"})
+    assert r.status_code == 502 and "15 minutes" in r.json()["detail"]
