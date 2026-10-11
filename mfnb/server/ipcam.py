@@ -22,8 +22,10 @@ import urllib.request
 LOCAL_NETS = [ipaddress.ip_network(n) for n in (
     "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "169.254.0.0/16", "127.0.0.0/8",
     "fc00::/7", "fe80::/10", "::1/128")]
-# Paths tried when only an address is given: IP Webcam and DroidCam (/video), older IP Webcam (/videofeed).
-DEFAULT_PATHS = ("/video", "/videofeed")
+# Paths tried when only an address is given: IP Webcam and DroidCam (/video), Android IP Camera (/video/mjpeg),
+# older IP Webcam (/videofeed). Only a 404 moves on to the next one: a refused login stops at once (Android IP
+# Camera blocks a computer after 5 failed logins).
+DEFAULT_PATHS = ("/video", "/video/mjpeg", "/videofeed")
 # Ports of the common phone apps, for discovery on a phone hotspot: IP Webcam 8080, DroidCam 4747.
 APP_PORTS = (8080, 4747)
 CONNECT_TIMEOUT_S = 6.0
@@ -73,6 +75,12 @@ def check_url(url: str) -> tuple[str, dict[str, str]]:
 
 def describe(err: BaseException) -> str:
     if isinstance(err, urllib.error.HTTPError):
+        if err.code == 403:
+            return ("The phone app refused access. Android IP Camera needs a username and password set in its "
+                    "settings, then http://user:password@PHONE-IP:4444 in the address.")
+        if err.code == 429:
+            return ("The phone app blocked this computer after failed logins: wait 15 minutes, then connect with the "
+                    "right username and password in the address.")
         if err.code == 401:
             return "The phone app asks for a login: put it in the address, e.g. http://user:password@10.0.0.5:8080"
         return f"The phone app answered with error {err.code}: check the address (for IP Webcam it ends with /video)."
