@@ -3,7 +3,7 @@ import pytest
 
 from mfnb.motion.library import get_library
 from mfnb.motion.scoring import ResponseInput, judge, keypose_indices, score_motor
-from mfnb.motion.skeleton import mirror_seq
+from mfnb.motion.skeleton import J, mirror_seq
 from mfnb.sim import synth_response
 
 
@@ -68,6 +68,15 @@ def test_score_invalid_when_low_visibility(lib):
     vis = np.full(f.shape[:2], 0.2)
     out = score_motor([it.frames], ResponseInput(f, t, vis))["target"]
     assert out["valid"] is False and "visible" in out["reason"]
+
+
+def test_kick_with_legs_out_of_view_is_not_judged(lib):
+    it = lib.get("kick.rear_low_round")
+    f, t = synth_response(it.frames, np.random.default_rng(5))
+    vis = np.ones(f.shape[:2])
+    vis[:, [J[n] for n in ("l_knee", "r_knee", "l_ankle", "r_ankle", "l_foot", "r_foot")]] = 0.0
+    out = score_motor([it.frames], ResponseInput(f, t, vis))["target"]
+    assert out["valid"] is False and "out of view" in out["reason"]
 
 
 def test_lure_confusion_reported(lib):

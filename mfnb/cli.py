@@ -93,6 +93,35 @@ def cmd_import_cmu(args) -> int:
     return import_cmu(args)
 
 
+def cmd_export_block(args) -> int:
+    """Write a block with its recorded responses to a file, to share it for a scoring problem."""
+    import gzip
+    import json
+    from pathlib import Path
+
+    from .storage.db import Store
+    store = Store(config.db_path())
+    bid = args.block
+    if bid is None:
+        rows = store._q("SELECT id FROM blocks WHERE modality=? ORDER BY started_at DESC LIMIT 1", (args.modality,))
+        if not rows:
+            print(f"No {args.modality} block recorded yet.")
+            return 1
+        bid = rows[0]["id"]
+    block = store.get_block(bid)
+    if block is None:
+        print(f"No block {bid}.")
+        return 1
+    prof = store.get_profile(block["profile_id"]) or {}
+    data = {"version": __version__, "block": block, "trials": store.list_trials(bid, with_responses=True),
+            "settings": prof.get("settings"), "calibration": prof.get("calibration")}
+    out = Path(args.out or Path.home() / f"mfnb-block-{bid}.json.gz").expanduser()
+    out.write_bytes(gzip.compress(json.dumps(data).encode()))
+    kept = sum(1 for t in data["trials"] if t.get("response"))
+    print(f"Block {bid} ({block['modality']}, {len(data['trials'])} trials, {kept} with recorded movement) -> {out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="mfnb", description="Motor & Facial N-Back training app")
     p.add_argument("--version", action="version", version=__version__)
@@ -121,10 +150,14 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--source", help="folder with CMU BVH files (default: download the curated subjects)")
     c.add_argument("--subjects", help="comma-separated subject numbers (default: curated list)")
     c.add_argument("--out", help="pack file to write (default: bundled pack)")
+    ex = sub.add_parser("export-block", help="save a block and its recorded movements to a file (to report a scoring problem)")
+    ex.add_argument("--block", type=int, default=None, help="block number (default: the latest)")
+    ex.add_argument("--modality", choices=["motor", "facial"], default="motor")
+    ex.add_argument("--out", default=None, help="file to write (default: ~/mfnb-block-<n>.json.gz)")
     args = p.parse_args(argv)
     handlers = {None: cmd_serve, "serve": cmd_serve, "fetch-assets": cmd_fetch_assets, "library": cmd_library,
                 "calibrate": cmd_calibrate, "import-cmu": cmd_import_cmu, "import-dataset": cmd_import_dataset,
-                "import-bvh": cmd_import_bvh}
+                "import-bvh": cmd_import_bvh, "export-block": cmd_export_block}
     return handlers[args.cmd](args)
 
 
