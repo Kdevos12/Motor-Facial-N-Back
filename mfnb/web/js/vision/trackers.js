@@ -48,9 +48,16 @@ class BaseTracker {
   }
   _loop(handle) {
     let last = -1;
+    let resumed = 0;
     const loop = () => {
       if (!this.running) return;
       const v = this.video;
+      // the browser pauses a <video> taken out of the page (each screen change does that) and does not restart
+      // it when it comes back: without this the picture freezes after the camera check and nothing is tracked
+      if (v.paused && !v.ended && v.srcObject && performance.now() - resumed > 500) {
+        resumed = performance.now();
+        v.play().catch(() => {});
+      }
       if (v.readyState >= 2 && v.currentTime !== last) {
         last = v.currentTime;
         try { handle(this._source(), performance.now()); } catch (err) { console.warn(err); }
