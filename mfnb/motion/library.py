@@ -10,6 +10,7 @@ import numpy as np
 from .primitives import boxing, dance, everyday, fitness, grappling, kicks, martial, taichi
 from .primitives.dsl import FLEX, Primitive
 from .rig import sample_keys
+from .scoring import THRESHOLD_CAP
 from .skeleton import J, mirror_seq
 
 FPS = 30
@@ -261,7 +262,8 @@ class MotionLibrary:
 
     def threshold(self, item_id: str, framing: str = "full") -> float:
         it = self.items[item_id]
-        return it.threshold_upper if framing == "upper" and it.threshold_upper is not None else it.threshold
+        thr = it.threshold_upper if framing == "upper" and it.threshold_upper is not None else it.threshold
+        return min(thr, THRESHOLD_CAP)
 
     def chiral(self, item_id: str, framing: str = "full") -> bool:
         it = self.items[item_id]

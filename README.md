@@ -115,7 +115,7 @@ Python server.
   the target by **subsequence DTW** (`dtaidistance`). Idle time and tempo don't matter.
   The score combines accuracy along the alignment with how well every **key pose** was
   reproduced. Each move has its own acceptance threshold, calibrated against near-miss
-  moves (an idea from the Jackknife recogniser). Recent other moves are scored as **lures**:
+  moves (an idea from the Jackknife recogniser) and capped at 0.5 for webcam noise. Recent other moves are scored as **lures**:
   doing the wrong item from the buffer is reported as such. The response is first rotated
   from the camera's viewpoint to the screen's (measured at the start of the block, plus
   your heading in the relaxed moment after GO); neither correction looks at the target, so
