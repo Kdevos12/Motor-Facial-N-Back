@@ -9,6 +9,9 @@ Webcam-based working-memory training, 100% local:
 Each block adapts N to your accuracy (or you choose N yourself). A dashboard tracks your
 N, your accuracy and the moves and expressions you have mastered.
 
+Why it is built this way (motor working memory, updating, motor memory, the mirror system, sport and
+faces, and what training can and cannot be expected to change): [docs/neuroscience-rationale.md](docs/neuroscience-rationale.md).
+
 ## Quick start
 
 ```bash
