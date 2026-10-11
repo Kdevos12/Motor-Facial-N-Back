@@ -82,7 +82,8 @@ def test_upper_framing_ignores_invented_legs(lib):
     vis[:, legs] = 0.0                                             # out of frame (set by the browser)
     full = score_motor([it.frames], ResponseInput(f, t, vis))["target"]
     upper = score_motor([it.frames], ResponseInput(f, t, vis), framing="upper")["target"]
-    assert not full["valid"]
+    # legs out of the picture are left out of the score in either framing (a wave does not use them)
+    assert full["valid"] and "left shin" not in full["per_bone_deg"]
     assert upper["valid"] and upper["score"] >= lib.threshold("daily.wave", "upper")
 
 

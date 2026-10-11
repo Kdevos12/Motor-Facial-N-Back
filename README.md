@@ -137,6 +137,7 @@ pytest                                  # unit + API tests
 mfnb serve --no-browser &               # then, with Playwright installed:
 python tests/e2e/smoke.py               # runs a motor and a facial block in demo mode
 mfnb calibrate --bundled                # recompute bundled thresholds after editing moves
+mfnb export-block                       # save your latest motor block (movements included) to share a scoring problem
 mfnb import-cmu                         # rebuild the bundled CMU pack
 ```
 

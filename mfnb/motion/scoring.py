@@ -262,43 +262,64 @@ class ResponseInput:
     visibility: np.ndarray | None = None  # (T, 19)
 
 
-def clean_framed(resp: ResponseInput, framing: str = "full") -> tuple[np.ndarray | None, str, bool]:
-    """Drop low-visibility frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid, hips_ok).
-    The browser sets the visibility of joints outside the picture to 0. In 'upper' framing only the arms are
-    required; the hips count when they are in the picture in at least 80% of the frames."""
+def _bone_joints(name: str) -> list[int]:
+    if name == "mid_hip":
+        return HIP_JOINTS
+    if name == "mid_shoulder":
+        return [J["l_shoulder"], J["r_shoulder"]]
+    return [J[name]]
+
+
+BONE_JOINTS = [_bone_joints(a) + _bone_joints(b) for _, a, b, _ in BONES]
+
+
+def seen_bones(vis: np.ndarray, min_share: float = 0.6) -> np.ndarray:
+    """(B,) True for bones whose joints are in the picture (visibility > 0.5) in at least ``min_share`` of the
+    frames. A limb out of the picture or lost by the tracker is left out of the score instead of failing it."""
+    good = vis > 0.5
+    return np.array([float(np.mean(good[:, js].all(-1))) >= min_share for js in BONE_JOINTS])
+
+
+def clean_framed(resp: ResponseInput, framing: str = "full") -> tuple[np.ndarray | None, str, bool, np.ndarray]:
+    """Drop unusable frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid, hips_ok, seen) where
+    ``seen`` (B,) marks the bones visible enough to be scored. The browser sets the visibility of joints outside
+    the picture to 0. The hips count (upper framing) when they are in the picture in at least 80% of the frames."""
+    seen = np.ones(len(BONES), bool)
     frames = np.asarray(resp.frames, dtype=float)
     times = None if resp.times_s is None else np.asarray(resp.times_s, dtype=float)
     if frames.ndim != 3:
-        return None, "no tracking data", False
+        return None, "no tracking data", False, seen
     finite = np.isfinite(frames).all(axis=(1, 2))      # a frame the tracker could not fill is dropped, not fatal
     frames = frames[finite]
     times = None if times is None or len(times) != len(finite) else times[finite]
     if len(frames) < 5:
-        return None, "no tracking data", False
+        return None, "no tracking data", False, seen
     hips_ok = True
     if resp.visibility is not None and len(resp.visibility) == len(finite):
-        vis_all = np.asarray(resp.visibility, dtype=float)[finite]
+        vis = np.asarray(resp.visibility, dtype=float)[finite]
         if framing == "upper":
-            hips_ok = float(np.mean(vis_all[:, HIP_JOINTS].min(-1) > 0.5)) >= 0.8
-            joints = ARM_JOINTS + (HIP_JOINTS if hips_ok else [])
-        else:
-            joints = MAIN_JOINTS
-        vis = vis_all[:, joints]
-        ok = (vis.min(-1) >= 0.25) & (vis.mean(-1) >= 0.5)
-        if ok.mean() < 0.5:
-            return None, ("arms not fully visible" if framing == "upper" else "body not fully visible"), hips_ok
+            hips_ok = float(np.mean(vis[:, HIP_JOINTS].min(-1) > 0.5)) >= 0.8
+        seen = seen_bones(vis)
+        arms = [BONE_NAMES.index(n) for n in ("left upper arm", "left forearm", "right upper arm", "right forearm")]
+        if not seen[arms].any():
+            return None, "arms not visible", hips_ok, seen
+        # frames where the tracker lost the visible part of the body (person out of the picture for a moment)
+        js = sorted({j for k in np.flatnonzero(seen) for j in BONE_JOINTS[k]})
+        ok = vis[:, js].mean(-1) >= 0.4
+        if ok.mean() < 0.4:
+            return None, "body not visible", hips_ok, seen
         frames = frames[ok]
         times = None if times is None else times[ok]
     if times is None:
         times = np.arange(len(frames)) / SOURCE_FPS
-    if times[-1] - times[0] < 0.5:
-        return None, "response too short", hips_ok
-    return resample(frames, times, FEATURE_FPS), "", hips_ok
+    if len(frames) < 5 or times[-1] - times[0] < 0.5:
+        return None, "response too short", hips_ok, seen
+    return resample(frames, times, FEATURE_FPS), "", hips_ok, seen
 
 
 def clean_response(resp: ResponseInput) -> tuple[np.ndarray | None, str]:
     """Drop low-visibility frames and resample to FEATURE_FPS. Returns (frames, reason-if-invalid)."""
-    frames, reason, _ = clean_framed(resp, "full")
+    frames, reason, _, _ = clean_framed(resp, "full")
     return frames, reason
 
 
@@ -422,10 +443,18 @@ def score_motor(targets: list[np.ndarray], response: ResponseInput, *, static: b
     Returns ``{"target": MotorScore dict, "lures": [scores], "view": {...}}``.
     """
     scorer = Scorer(tolerance)
-    clean, reason, hips_ok = clean_framed(response, framing)
+    clean, reason, hips_ok, seen = clean_framed(response, framing)
     if clean is None:
         return {"target": MotorScore(score=0.0, valid=False, reason=reason).to_dict(), "lures": [], "view": None}
     w = bone_weights(framing, hips_ok)
+    # bones out of the picture are left out, unless they are the ones that move: then the move cannot be judged
+    target_all = np.concatenate(targets, axis=0)
+    motion = np.degrees(np.arccos(np.clip(np.sum(bone_dirs(target_all) * bone_dirs(target_all[:1]), -1), -1, 1))).max(0)
+    moving = w * motion
+    if moving.sum() > 0 and (moving * seen).sum() < 0.75 * moving.sum():
+        return {"target": MotorScore(score=0.0, valid=False, reason="the moving part of the body was out of view").to_dict(),
+                "lures": [], "view": None}
+    w = w * seen
     view_out = None
     if view is not None:
         clean = clean @ view.R.T
