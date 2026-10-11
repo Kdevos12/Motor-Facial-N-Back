@@ -17,8 +17,24 @@ export function h(tag, attrs = {}, ...children) {
   return el;
 }
 
+// A camera <video> taken out of the page is paused by the browser and stays paused when it is put back, which
+// froze the camera after the camera check. Screen changes park it, still in the page, until a view takes it back.
+function parkVideos(app) {
+  const live = [...app.querySelectorAll('video')].filter((v) => v.srcObject?.active);
+  let park = document.getElementById('video-park');
+  if (!park) {
+    if (!live.length) return;
+    park = h('div', { id: 'video-park', 'aria-hidden': 'true', style: { position: 'fixed', left: '0', top: '0', width: '2px',
+      height: '2px', overflow: 'hidden', opacity: '0.01', pointerEvents: 'none', zIndex: '-1' } });
+    document.body.append(park);
+  }
+  for (const v of park.querySelectorAll('video')) if (!v.srcObject?.active) v.remove();
+  park.append(...live);
+}
+
 export function mount(el) {
   const app = document.getElementById('app');
+  parkVideos(app);
   app.replaceChildren(el);
   return app;
 }

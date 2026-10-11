@@ -68,6 +68,16 @@ class ExclusionIn(BaseModel):
     excluded: bool
 
 
+class AppFiles(StaticFiles):
+    """The web app's files, revalidated on every load: after an update (git pull) the browser gets the new code
+    instead of a cached module (unchanged files cost a 304)."""
+
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 def create_app(store: Store | None = None, trainer: Trainer | None = None, assets_root: Path | None = None) -> FastAPI:
     store = store or Store(config.db_path())
     trainer = trainer or Trainer(store)
@@ -262,7 +272,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     # static files: locally cached MediaPipe assets + the web app
     assets_root.mkdir(parents=True, exist_ok=True)
     app.mount("/assets", StaticFiles(directory=str(assets_root)), name="assets")
-    app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
+    app.mount("/static", AppFiles(directory=str(WEB_DIR)), name="static")
 
     @app.get("/")
     def index():

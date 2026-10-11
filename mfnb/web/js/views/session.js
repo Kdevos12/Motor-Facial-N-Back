@@ -307,6 +307,10 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   }
 }
 
+// A 2-s capture is usable when the person was tracked in most of the analysed frames. Counted relative to the
+// frames analysed, not as a fixed number: a slow computer analyses fewer frames per second.
+function enoughTracked(rec) { return rec.frames.length >= 8 && rec.tracked >= 0.6; }
+
 // ~2 s standing (or sitting) relaxed, facing the screen: the server measures the camera's angle from it.
 async function captureView(ctl, framing) {
   const msg = h('h2', {}, 'Face the screen, arms relaxed by your sides');
@@ -318,7 +322,7 @@ async function captureView(ctl, framing) {
     for (const k of ['3', '2', '1']) { if (ctl.aborted) return null; sub.textContent = `Hold still… ${k}`; await sleep(700); }
     sub.textContent = 'Measuring… keep still';
     const rec = await ctl.tracker.record(2);
-    if (rec.frames.length >= 20) return { frames: rec.frames, visibility: rec.visibility };
+    if (enoughTracked(rec)) return { frames: rec.frames, visibility: rec.visibility };
     msg.textContent = 'You were not tracked — step back into view';
     await sleep(1500);
   }
@@ -336,7 +340,7 @@ async function captureNeutral(ctl) {
     for (const k of ['3', '2', '1']) { if (ctl.aborted) return null; sub.textContent = `Hold a neutral face… ${k}`; await sleep(600); }
     sub.textContent = 'Recording… keep still';
     const rec = await ctl.tracker.record(2);
-    if (rec.frames.length >= 20) return rec.frames;
+    if (enoughTracked(rec)) return rec.frames;
     msg.textContent = 'Your face was not tracked — move closer to the camera, light on your face';
     await sleep(1500);
   }
@@ -363,6 +367,19 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
     const view = h('div', { class: 'camview' });
     if (!simulate) view.append(display, overlay);
     else view.append(overlay);
+    // how many pictures per second the tracker analyses: shown so a slow computer is visible before the block
+    const speed = h('p', { class: 'small muted' });
+    let speedAt = 0;
+    const showSpeed = () => {
+      const r = ctl.tracker.rate?.() || 0;
+      if (simulate || !r || performance.now() - speedAt < 1000) return;
+      speedAt = performance.now();
+      const where = ctl.tracker.model?.delegate === 'CPU' ? ' (on the processor: the graphics card could not be used)' : '';
+      speed.textContent = `Tracking: ${Math.round(r)} pictures per second${where}.`
+        + (r < 10 ? ' That is slow: close other tabs and apps, and check that hardware acceleration is on in the browser settings.' : '');
+      speed.classList.toggle('notice', r < 10);
+      speed.classList.toggle('warn', r < 10);
+    };
     let okSince = null;
     let sideVotes = [];
     let sideDone = !needSide;
@@ -404,6 +421,7 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
         }
       }
       st.side = sideDone;
+      showSpeed();
       for (const [k] of items) dots[k].classList.toggle('ok', !!st[k]);
       const ok = items.every(([k]) => st[k]);
       okSince = ok ? (okSince ?? performance.now()) : null;
@@ -429,7 +447,7 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
       h('div', { class: 'camcheck' }, view,
         h('div', { class: 'card stack' },
           h('ul', { class: 'checklist' }, items.map(([k, label]) => h('li', {}, dots[k], label))),
-          sidePrompt,
+          sidePrompt, speed,
           h('p', { class: 'muted small' }, setupAdvice(modality, framing, s.stance)),
           modality === 'facial'
             ? h('p', { class: 'muted small' }, 'After Start you will hold a relaxed face for 2 seconds.')
