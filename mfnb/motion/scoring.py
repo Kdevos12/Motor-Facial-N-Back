@@ -29,8 +29,15 @@ FRAMINGS = ("full", "upper")   # whole body in view / head to mid-thigh (seated 
 DEFAULT_THRESHOLD = 0.45
 # per-item thresholds (motion/calibration.py) reject near-misses of clean copies; a real webcam response is noisier,
 # so no move asks for more than this
-THRESHOLD_CAP = 0.50
+THRESHOLD_CAP = 0.42
 COST_CAP = 3.0
+# per bone, an error counts at most this much (in tolerance units): a limb the tracker loses for a moment, or a
+# camera framing error on one segment, cannot sink an otherwise correct move
+BONE_CAP = 2.0
+# key poses: weight of the worst one against the mean (one half-missed pose should not fail a whole combination)
+REPRO_MIN_WEIGHT = 0.25
+# share of the user's offset at the start pose that is forgiven at each key pose
+BASELINE_SHARE = 0.8
 MIN_KEYPOSE_DEV = 0.15
 KEYPOSE_SLACK = 4  # frames (at FEATURE_FPS) searched around the aligned key pose
 # a key pose counts from KEYPOSE_FLOOR of the way from the start stance to it, fully reproduced at KEYPOSE_FULL
@@ -40,10 +47,10 @@ KEYPOSE_FULL = 0.50
 
 @dataclass(frozen=True)
 class Tolerance:
-    angle_deg: float = 52.0      # webcam pose tracking is noisy: about 40-50 deg on a correct move
+    angle_deg: float = 60.0      # webcam pose tracking + framing + the user's own margin add up
     strictness: float = 1.0        # >1 stricter, <1 more lenient
     flexibility: str = "medium"    # scales lower-body tolerance
-    depth_weight: float = 0.5      # monocular depth is noisy: z counts less
+    depth_weight: float = 0.35     # monocular depth is the noisiest axis: z counts less
 
     def taus(self) -> np.ndarray:
         tau = np.full(len(BONES), np.radians(self.angle_deg) / max(self.strictness, 0.1))
@@ -111,16 +118,18 @@ class Scorer:
         vel = np.vstack([np.zeros((1, pos.shape[1])), np.diff(pos, axis=0)]) * self.vw
         return Prepared(dirs=dirs, feats=np.ascontiguousarray(np.hstack([pos, vel]), dtype=np.double), weights=w)
 
-    def frame_costs(self, a_dirs: np.ndarray, b_dirs: np.ndarray, w: np.ndarray) -> np.ndarray:
-        """Weighted mean (angle/tau)^2 between aligned direction arrays (N, B, 3) -> (N,)."""
+    def frame_costs(self, a_dirs: np.ndarray, b_dirs: np.ndarray, w: np.ndarray, bone_cap: float | None = None) -> np.ndarray:
+        """Weighted mean (angle/tau)^2 between aligned direction arrays (N, B, 3) -> (N,), each bone capped at
+        ``bone_cap`` (BONE_CAP by default; the target's own deviation from its start is not capped)."""
         z = np.array([1.0, 1.0, self.tol.depth_weight])
         d2 = np.sum(((a_dirs - b_dirs) * z) ** 2, axis=-1)  # ~ angle^2 for small angles
-        cost = (d2 / self.tau ** 2 * w).sum(-1) / w.sum()
+        cost = (np.minimum(d2 / self.tau ** 2, BONE_CAP if bone_cap is None else bone_cap) * w).sum(-1) / w.sum()
         return np.minimum(cost, COST_CAP)  # one bad frame (tracking glitch) cannot sink a trial
 
     def deviation(self, target: Prepared) -> np.ndarray:
         """Per-frame distance of the target from its own starting pose (same units as costs)."""
-        return self.frame_costs(target.dirs, np.broadcast_to(target.dirs[:1], target.dirs.shape), target.weights)
+        return self.frame_costs(target.dirs, np.broadcast_to(target.dirs[:1], target.dirs.shape), target.weights,
+                                bone_cap=np.inf)
 
     @staticmethod
     def activity(dev: np.ndarray) -> np.ndarray:
@@ -152,6 +161,9 @@ class Scorer:
         mean_cost = float((per_query * act).sum() / act.sum())
         s_abs = float(np.exp(-mean_cost))
         kps = keyposes if keyposes else [int(np.argmax(dev))]
+        # the user's own offset from the target while still at the start (stance, elbows, camera framing): it is
+        # there at every key pose too, so it is not counted against reaching them
+        base = float(self.frame_costs(target.dirs[:1], response.dirs[rj[:1]], target.weights)[0])
         kp_out, repro = [], []
         for k in kps:
             sel = qi == k
@@ -162,13 +174,13 @@ class Scorer:
             window = self.frame_costs(np.broadcast_to(target.dirs[k], response.dirs[lo:hi].shape),
                                       response.dirs[lo:hi], target.weights)
             jbest = lo + int(np.argmin(window))
-            c = float(window.min())
+            c = max(0.0, float(window.min()) - BASELINE_SHARE * base)
             r = 1.0 - c / max(float(dev[k]), MIN_KEYPOSE_DEV)
             q = float(np.clip((r - KEYPOSE_FLOOR) / (KEYPOSE_FULL - KEYPOSE_FLOOR), 0.0, 1.0))
             repro.append(q)
             kp_out.append({"t_target": round(k / FEATURE_FPS, 2), "t_response": round(jbest / FEATURE_FPS, 2),
                            "hit": q >= 0.5, "reproduced": round(q, 2)})
-        s_rel = 0.5 * min(repro) + 0.5 * float(np.mean(repro)) if repro else 1.0
+        s_rel = REPRO_MIN_WEIGHT * min(repro) + (1 - REPRO_MIN_WEIGHT) * float(np.mean(repro)) if repro else 1.0
         score = s_abs * s_rel
         span_r = int(rj.max() - rj.min())
         ratio = span_r / max(n_t - 1, 1)
