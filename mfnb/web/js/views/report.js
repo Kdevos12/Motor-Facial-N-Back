@@ -4,7 +4,7 @@ import { FaceAvatar, mirrorShapes } from '../render/face.js';
 import { displayFrames } from '../render/retarget.js';
 import { StickFigure } from '../render/stickman.js';
 import { state } from '../state.js';
-import { fmtPct, h, modal, mount } from '../ui.js';
+import { fmtPct, h, itemLabel, modal, mount } from '../ui.js';
 
 function groundFrames(frames) {
   let low = Infinity;
@@ -28,7 +28,7 @@ export async function reportView(bid) {
   const results = Object.fromEntries(rep.trials_results.map((t) => [t.idx, t]));
   const sum = rep.summary;
   const name = (id) => (items[id] ? items[id].name : id);
-  const targetDesc = (tr) => tr.targets.map((t) => `${name(t.item_id)}${t.effective_mirror ? ' (mirrored)' : ''}`).join(' → ');
+  const targetDesc = (tr) => tr.targets.map((t) => (motor ? `${name(t.item_id)}${t.effective_mirror ? ' (mirrored)' : ''}` : itemLabel(name(t.item_id), t.effective_mirror, 'facial'))).join(' → ');
 
   const openReplay = (tr) => {
     const res = results[tr.index];
@@ -44,7 +44,7 @@ export async function reportView(bid) {
         res.confused_with ? h('p', { class: 'muted' }, `Your movement matched “${name(res.confused_with)}” better (another recent item).`) : null,
         r.worst_bones && r.worst_bones.length ? h('p', { class: 'muted' }, `Largest differences: ${r.worst_bones.map((b) => `${b} (${Math.round(r.per_bone_deg[b])}°)`).join(', ')}.`) : null,
         r.keyposes && r.keyposes.length ? h('p', { class: 'muted' }, `Key poses reproduced: ${r.keyposes.filter((k) => k.hit).length}/${r.keyposes.length}.`) : null,
-        r.missing && r.missing.length ? h('p', { class: 'muted' }, `Missing: ${r.missing.join(', ')}.`) : null,
+        r.missing && r.missing.length ? h('p', { class: 'muted' }, `${motor ? 'Missing' : 'To work on'}: ${r.missing.join('; ')}.`) : null,
         r.extra && r.extra.length ? h('p', { class: 'muted' }, `Extra: ${r.extra.join(', ')}.`) : null].filter(Boolean));
     }
     const close = modal(h('div', { class: 'stack' },
@@ -66,15 +66,8 @@ export async function reportView(bid) {
       const target = t.effective_mirror ? mirrorShapes(items[t.item_id].target) : items[t.item_id].target;
       const view = s.view === 'facing' ? 'facing' : 'mirror';
       new FaceAvatar(left, { view }).draw(target);
-      if (res && res.response && res.response.frames && res.response.frames.length) {
-        const names = state.meta.face_names;
-        const frames = res.response.frames;
-        let best = frames[0]; let bestSum = -1;
-        for (const f of frames) { const sm = f.reduce((a, b) => a + b, 0); if (sm > bestSum) { bestSum = sm; best = f; } }
-        const shapes = {};
-        (best.length === 52 ? names : names.slice(1)).forEach((n, i) => { shapes[n] = best[i]; });
-        new FaceAvatar(right, { view }).draw(shapes);
-      }
+      // the scored 0.5 s, from your resting face, as a fraction of your range (the units the target is drawn in)
+      if (r && r.seen) new FaceAvatar(right, { view }).draw(r.seen);
     }
   };
 

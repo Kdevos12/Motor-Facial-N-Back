@@ -57,15 +57,23 @@ export class SimPoseTracker extends SimBase {
 }
 
 export class SimFaceTracker extends SimBase {
-  constructor(names) { super(); this.kind = 'face'; this.names = names; }
+  // names: the 52 MediaPipe names; typicalMax / rest: per-shape priors without '_neutral' (what real faces output)
+  constructor(names, { typicalMax = null, rest = null } = {}) {
+    super(); this.kind = 'face'; this.names = names;
+    this.top = names.map((n, i) => (i === 0 ? 0 : typicalMax ? typicalMax[i - 1] : 1));
+    this.rest = names.map((n, i) => (i === 0 ? 0 : rest ? rest[i - 1] : 0));
+  }
   expect(target, { correct = Math.random() < this.accuracy, delay = 0.7 } = {}) {
-    this.target = target && correct ? target : (target ? { jawOpen: 0.5 } : null);
+    this.target = target && correct ? target : (target ? { jawOpen: 0.6, mouthPucker: 0.5 } : null);
     this._start = performance.now() + delay * 1000;
   }
   _tick() {
     const now = performance.now();
-    const ramp = Math.max(0, Math.min(1, (now - this._start) / 300));
-    const shapes = this.names.map((n) => Math.max(0, Math.min(1, ((this.target?.[n] || 0) * ramp) + Math.abs(gauss()) * 0.03)));
+    const ramp = this.target ? Math.max(0, Math.min(1, (now - this._start) / 300)) : 0;
+    const shapes = this.names.map((n, i) => {
+      const rise = (this.target?.[n] || 0) * 0.85 * Math.max(0, this.top[i] - this.rest[i]);
+      return Math.max(0, Math.min(1, this.rest[i] + rise * ramp + gauss() * 0.015));
+    });
     this._emit({ t: now, shapes });
   }
   pack(samples, t0) {

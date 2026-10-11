@@ -9,13 +9,14 @@ from collections import defaultdict
 import numpy as np
 
 from ..face.blendshapes import D as FACE_D
+from ..face.blendshapes import DIMS as FACE_DIMS
 from ..face.blendshapes import IDX as FACE_IDX
-from ..face.blendshapes import from_mediapipe, mirror_vec
+from ..face.blendshapes import MIRROR_PERM, from_mediapipe
 from ..face.expressions import FaceLibrary, get_face_library
-from ..face.scoring import FaceCalibration, score_face
+from ..face.scoring import MIN_RISE, FaceCalibration, FaceTarget, neutral_from_frames, orient, score_face, thresholds
 from ..motion.library import MotionLibrary, get_library
 from ..motion.rig import DEFAULT_BODY, BodyDims
-from ..motion.scoring import ResponseInput, Tolerance, judge, score_motor
+from ..motion.scoring import ResponseInput, Tolerance, View, estimate_view, judge, rot_y, score_motor
 from ..motion.skeleton import J
 from ..nback.adaptive import next_n
 from ..nback.plan import PlanOptions, TrialPlan, lure_items, make_plan, resolve_targets
@@ -23,13 +24,23 @@ from ..progress.mastery import ItemStats, record_attempt, record_seen, status
 from ..storage.db import Store
 
 MODALITIES = ("motor", "facial")
+VIEW_WARN_YAW, VIEW_WARN_TILT, VIEW_MAX_YAW = 45.0, 30.0, 70.0
 FACE_STIM_S = 2.4  # neutral -> expression -> hold -> neutral
-GAIN_GROUPS = {
-    "smile": ["mouthSmileLeft", "mouthSmileRight", "cheekSquintLeft", "cheekSquintRight"],
+# Face calibration prompts -> the shapes each one measures (the shapes it is about, not its side effects).
+CALIBRATION_PROMPTS = {
+    "smile": ["mouthSmileLeft", "mouthSmileRight"],
     "brows_up": ["browInnerUp", "browOuterUpLeft", "browOuterUpRight"],
     "frown": ["browDownLeft", "browDownRight"],
-    "jaw_open": ["jawOpen", "mouthLowerDownLeft", "mouthLowerDownRight"],
-    "pucker": ["mouthPucker", "mouthFunnel"],
+    "eyes_closed": ["eyeBlinkLeft", "eyeBlinkRight"],
+    "jaw_open": ["jawOpen"],
+    "pucker": ["mouthPucker"],
+    "upper_lip": ["mouthUpperUpLeft", "mouthUpperUpRight"],
+    "mouth_frown": ["mouthFrownLeft", "mouthFrownRight"],
+    "funnel": ["mouthFunnel"],
+    "lips_press": ["mouthPressLeft", "mouthPressRight"],
+    "lips_roll": ["mouthRollLower", "mouthRollUpper"],
+    "jaw_left": ["jawLeft"],
+    "mouth_left": ["mouthLeft"],
 }
 
 
@@ -74,25 +85,61 @@ class Trainer:
         return d
 
     def face_item_payload(self, item_id: str) -> dict:
+        if item_id not in self.face.items:   # a block from before an update removed this expression
+            return {"id": item_id, "name": "Retired expression", "target": {}, "retired": True, "category": "",
+                    "complexity": 0, "sided": False, "keys": [], "duration_s": FACE_STIM_S}
         d = self.face.get(item_id).meta()
         d["duration_s"] = FACE_STIM_S
         return d
 
-    def motor_pool(self, prof: dict, overrides: dict | None = None):
+    @staticmethod
+    def framing(settings: dict, overrides: dict | None = None) -> str:
+        f = {**settings["motor"], **(overrides or {})}.get("framing", "full")
+        return f if f in ("full", "upper") else "full"
+
+    def motor_pool(self, prof: dict, overrides: dict | None = None, camera_yaw_deg: float | None = None):
         s = prof["settings"]
         ms = {**s["motor"], **(overrides or {})}
+        if camera_yaw_deg is None:
+            camera_yaw_deg = float((prof["calibration"].get("view") or {}).get("yaw_deg", 0.0))
         return self.motor.filter(categories=ms.get("categories") or None, complexity=tuple(ms.get("complexity", (1, 5))),
                                  flexibility=s["flexibility"], space=s["space"], allow_turn_away=s["allow_turn_away"],
-                                 exclude=self.store.exclusions(prof["id"], "motor"), sources=ms.get("sources") or None)
+                                 exclude=self.store.exclusions(prof["id"], "motor"), sources=ms.get("sources") or None,
+                                 framing=self.framing(s, overrides), camera_yaw_deg=camera_yaw_deg,
+                                 stance_mirror=s["stance"] == "southpaw")
+
+    def measure_view(self, pid: int, rest: dict, framing: str) -> tuple[View, str | None]:
+        """Camera angle from ~2 s of the user relaxed and facing the screen. Too oblique a camera is refused."""
+        f = np.asarray(rest.get("frames", []), dtype=float)
+        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10 or not np.isfinite(f).all():
+            raise ServiceError("You were not tracked while standing still: step back into view and try again.")
+        vis = rest.get("visibility")
+        view = estimate_view(f, None if vis is None else np.asarray(vis, float), framing)
+        yaw, tilt = abs(view.yaw_deg), view.tilt_deg
+        side = "right" if view.yaw_deg > 0 else "left"     # positive yaw: the camera is on the user's right
+        if yaw > VIEW_MAX_YAW:
+            raise ServiceError(f"The camera sees you from about {yaw:.0f}° to your {side}. Place it within 45° of "
+                               "straight in front of you, and face the screen while it measures.")
+        warning = None
+        if yaw > VIEW_WARN_YAW or tilt > VIEW_WARN_TILT:
+            warning = (f"The camera is about {yaw:.0f}° to your {side} and tilted {tilt:.0f}°. Scoring corrects for "
+                       "it, but tracking is more reliable within 30° and with the camera around chest height.")
+        self.store.set_calibration(pid, "view", view.to_dict())
+        return view, warning
+
+    def face_calibration(self, prof: dict) -> FaceCalibration:
+        return FaceCalibration.from_dict(prof["calibration"].get("face"))
 
     def face_pool(self, prof: dict, overrides: dict | None = None):
         fs = {**prof["settings"]["facial"], **(overrides or {})}
         return self.face.filter(categories=fs.get("categories") or None, complexity=tuple(fs.get("complexity", (1, 5))),
-                                exclude=self.store.exclusions(prof["id"], "facial"))
+                                exclude=self.store.exclusions(prof["id"], "facial"),
+                                measured=self.face_calibration(prof).measured)
 
     # -- blocks ------------------------------------------------------------------------
     def start_block(self, pid: int, modality: str, n: int | None = None, overrides: dict | None = None,
-                    seed: int | None = None) -> dict:
+                    seed: int | None = None, face_neutral: list | None = None, view_rest: dict | None = None,
+                    simulated: bool = False) -> dict:
         if modality not in MODALITIES:
             raise ServiceError(f"unknown modality {modality}")
         prof = self._profile(pid)
@@ -102,12 +149,21 @@ class Trainer:
         if n < 0 or n > 12:
             raise ServiceError("N must be between 0 and 12")
         rng = random.Random(seed)
+        view, view_warning = None, None
         if modality == "motor":
-            pool = self.motor_pool(prof, overrides)
+            framing = self.framing(s, overrides)
+            if view_rest is not None:
+                view, view_warning = self.measure_view(pid, view_rest, framing)
+            elif not simulated and prof["calibration"].get("view"):
+                # not measured this time (not tracked during the 2 s): keep the last measurement for both the move
+                # choice and the scoring
+                view = View.from_dict(prof["calibration"]["view"])
+                view_warning = "The camera angle could not be measured, so the last measurement is used."
+            pool = self.motor_pool(prof, overrides, 0.0 if view is None else view.yaw_deg)
             opts = PlanOptions(n=n, n_trials=int(ms["block_base"]) + n, variable_n=bool(ms.get("variable_n")),
                                chirality_p=float(ms.get("chirality_p", 0.0)), sequence_p=float(ms.get("sequence_p", 0.0)),
                                stance_mirror=s["stance"] == "southpaw")
-            kw = dict(chiral={i.id for i in pool if i.chiral},
+            kw = dict(chiral={i.id for i in pool if self.motor.chiral(i.id, framing)},
                       side_variety={i.id for i in pool if i.sided and not i.stance_based},
                       stance_based={i.id for i in pool if i.stance_based})
         else:
@@ -118,6 +174,17 @@ class Trainer:
             raise ServiceError("Fewer than 2 items match your filters: widen the categories or complexity range.")
         plan = make_plan([i.id for i in pool], opts, rng, **kw)
         config = {"settings": s, "overrides": overrides or {}, "pool_size": len(pool)}
+        if view is not None:
+            config["view"] = view.to_dict()
+            config["view_warning"] = view_warning
+        if modality == "facial" and face_neutral is not None:
+            # the resting face of this session (lighting, camera and posture change from day to day)
+            try:
+                neutral, deadzone = neutral_from_frames(self._face_frames(face_neutral))
+                config["face_neutral"] = np.round(neutral, 4).tolist()
+                config["face_deadzone"] = np.round(deadzone, 4).tolist()
+            except ServiceError:
+                pass   # face not tracked during the capture: fall back to the calibration's resting face
         bid = self.store.create_block(pid, modality, n, config, [t.to_dict() for t in plan], today())
         return self.block_payload(bid)
 
@@ -139,8 +206,11 @@ class Trainer:
             items = {i: self.motor_item_payload(i) for i in ids}
         else:
             items = {i: self.face_item_payload(i) for i in ids}
+        cfg = block["config"]
         return {"block_id": bid, "modality": modality, "n": block["n"], "trials": trials, "items": items,
-                "status": block["status"], "settings": block["config"]["settings"]}
+                "status": block["status"], "settings": cfg["settings"],
+                "framing": self.framing(cfg["settings"], cfg.get("overrides")) if modality == "motor" else None,
+                "view": cfg.get("view"), "view_warning": cfg.get("view_warning")}
 
     def submit_response(self, bid: int, idx: int, payload: dict) -> dict:
         block = self.store.get_block(bid)
@@ -163,33 +233,42 @@ class Trainer:
                 return self._invalid(bid, idx, plan, targets, "no tracking data")
             vis = payload.get("visibility")
             times = payload.get("times")
+            cfg = block["config"]
+            framing = self.framing(cfg["settings"], cfg.get("overrides"))
+            view = View.from_dict(cfg.get("view"))
             res = score_motor([self.motor.frames(i, m) for i, m in targets],
                               ResponseInput(frames, None if times is None else np.asarray(times, float),
                                             None if vis is None else np.asarray(vis, float)),
                               static=len(targets) == 1 and self.motor.get(targets[0][0]).static,
                               tolerance=Tolerance(strictness=float(s["strictness"]), flexibility=s["flexibility"]),
                               lures=[self.motor.frames(i, m) for i, m in lures],
-                              lure_static=[self.motor.get(i).static for i, _ in lures])
-            threshold = float(np.mean([self.motor.get(i).threshold for i, _ in targets]))
+                              lure_static=[self.motor.get(i).static for i, _ in lures], framing=framing, view=view)
+            threshold = float(np.mean([self.motor.threshold(i, framing) for i, _ in targets]))
             names = {i: self.motor.get(i).name for i, _ in lures}
         else:
-            frames = np.asarray(payload.get("frames", []), dtype=float)
-            calib = FaceCalibration.from_dict(prof["calibration"].get("face"))
-            if frames.ndim == 2 and frames.shape[1] == 52:
-                frames = from_mediapipe(frames, calib.lr_swap)
-            if frames.ndim != 2 or frames.shape[1] != FACE_D:
+            calib = self.face_calibration(prof)
+            if any(i not in self.face.items for i, _ in [*targets, *lures]):
+                raise ServiceError("This block uses expressions that an update removed: start a new block.")
+            try:
+                frames, keep = self._face_frames(payload.get("frames", []), with_mask=True)
+            except ServiceError:
                 return self._invalid(bid, idx, plan, targets, "no face tracked")
+            cfg = block["config"]
+            if cfg.get("face_neutral") is not None:
+                calib = calib.with_neutral(np.asarray(cfg["face_neutral"], float),
+                                           None if cfg.get("face_deadzone") is None else np.asarray(cfg["face_deadzone"], float))
             (tid, tm), = targets
             times = payload.get("times")
-            res = score_face(self.face.get(tid).vector(tm), frames, None if times is None else np.asarray(times, float),
-                             calib=calib, lures=[self.face.get(i).vector(m) for i, m in lures])
-            threshold = self.face.get(tid).threshold
+            times = None if times is None or len(times) != len(keep) else np.asarray(times, float)[keep]
+            threshold, gamma = thresholds(float(s["strictness"]))
+            res = score_face(FaceTarget.of(self.face.get(tid), tm), frames, times, calib=calib, threshold=threshold,
+                             gamma=gamma, lures=[FaceTarget.of(self.face.get(i), m) for i, m in lures])
             names = {i: self.face.get(i).name for i, _ in lures}
         tres = res["target"]
         valid = bool(tres["valid"])
         correct, confused_idx = judge(tres["score"], res["lures"], threshold) if valid else (None, None)
         confused = lures[confused_idx][0] if confused_idx is not None else None
-        result = {**tres, "threshold": round(threshold, 3), "lure_scores": res["lures"],
+        result = {**tres, "threshold": round(threshold, 3), "lure_scores": res["lures"], "view": res.get("view"),
                   "lures": [{"item_id": i, "mirrored": m, "name": names[i]} for i, m in lures]}
         response = {k: payload.get(k) for k in ("frames", "visibility", "times") if payload.get(k) is not None}
         self.store.save_trial(bid, idx, plan[idx].item_id, [[i, m] for i, m in targets], tres["score"], correct,
@@ -201,6 +280,7 @@ class Trainer:
                 st = record_attempt(ItemStats.from_dict(stats.get(i)), float(tres["score"]), bool(correct), day)
                 self.store.put_stats(block["profile_id"], block["modality"], i, st.to_dict())
         return {"index": idx, "score": tres["score"], "valid": valid, "reason": tres.get("reason", ""),
+                "missing": tres.get("missing", []),
                 "correct": correct, "threshold": round(threshold, 3),
                 "confused_with": None if confused is None else {"item_id": confused, "name": names[confused]}}
 
@@ -215,7 +295,7 @@ class Trainer:
             raise ServiceError(f"unknown block {bid}")
         prof = self._profile(block["profile_id"])
         trials = self.store.list_trials(bid)
-        valid = [t for t in trials if t["valid"]]
+        valid = [t for t in trials if t["valid"] and t["score"] is not None]
         acc = float(np.mean([bool(t["correct"]) for t in valid])) if valid else None
         mean_score = float(np.mean([t["score"] for t in valid])) if valid else None
         mode = prof["settings"]["n_mode"]
@@ -238,11 +318,23 @@ class Trainer:
         payload = self.block_payload(bid)
         block = self.store.get_block(bid)
         payload["trials_results"] = self.store.list_trials(bid, with_responses=True)
+        view = View.from_dict(block["config"].get("view")) if block["modality"] == "motor" else None
+        if view is not None:
+            # replay what was scored: the response turned from the camera's viewpoint to the screen's
+            for t in payload["trials_results"]:
+                fr = (t.get("response") or {}).get("frames")
+                if not fr:
+                    continue
+                R = view.R
+                rest = ((t.get("result") or {}).get("view") or {}).get("rest_yaw_deg")
+                if rest is not None:
+                    R = rot_y(-np.radians(rest)) @ R
+                t["response"]["frames"] = np.round(np.asarray(fr, float) @ R.T, 4).tolist()
         payload["summary"] = {k: block[k] for k in ("accuracy", "mean_score", "next_n", "started_at", "finished_at", "day")}
         return payload
 
     # -- calibration -------------------------------------------------------------------
-    def calibrate_body(self, pid: int, frames: list) -> dict:
+    def calibrate_body(self, pid: int, frames: list, framing: str = "full") -> dict:
         f = np.asarray(frames, dtype=float)
         if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10:
             raise ServiceError("need at least 10 frames of 19 joints")
@@ -262,39 +354,71 @@ class Trainer:
             "thigh": both("hip", "knee"), "shin": both("knee", "ankle"), "foot": both("ankle", "foot"),
         }
         default = DEFAULT_BODY.__dict__
+        if framing == "upper":   # legs out of the picture: keep the default proportions for them
+            for k in ("thigh", "shin", "foot"):
+                measured[k] = default[k]
         dims = {k: round(float(np.clip(v, 0.5 * default[k], 1.6 * default[k])), 3) for k, v in measured.items()}
         dims["ankle_height"] = default["ankle_height"]
         BodyDims.from_dict(dims)
         self.store.set_calibration(pid, "body", dims)
         return dims
 
+    @staticmethod
+    def _face_frames(x, lr_swap: bool = False, with_mask: bool = False):
+        """(T, 52) MediaPipe scores or (T, 51) shapes -> (T, 51) shapes (left/right swapped when lr_swap), without
+        the frames the browser could not fill; with_mask also returns which input frames were kept."""
+        try:
+            a = np.asarray(x, dtype=float)
+        except (TypeError, ValueError):
+            raise ServiceError("face frames must be numbers") from None
+        if a.ndim != 2 or a.shape[1] not in (FACE_D, FACE_D + 1) or len(a) < 3:
+            raise ServiceError("face frames must be (T, 52) or (T, 51)")
+        a = from_mediapipe(a) if a.shape[1] == FACE_D + 1 else a
+        keep = np.isfinite(a).all(axis=1)
+        a = a[keep]
+        if len(a) < 3:
+            raise ServiceError("no face tracked")
+        out = orient(np.clip(a, 0.0, 1.0), lr_swap)
+        return (out, keep) if with_mask else out
+
+    @staticmethod
+    def wink_side(neutral: np.ndarray, wink_left: np.ndarray) -> str:
+        """'normal' when a left wink closes the left eye, 'mirrored' when it closes the right one (the camera feed is
+        mirrored), 'unclear' otherwise (both eyes, or barely moved)."""
+        rise = np.percentile(wink_left, 90, axis=0) - neutral
+        dl, dr = rise[FACE_IDX["eyeBlinkLeft"]], rise[FACE_IDX["eyeBlinkRight"]]
+        if dl - dr >= 0.15 and dl >= 0.20:
+            return "normal"
+        if dr - dl >= 0.15 and dr >= 0.20:
+            return "mirrored"
+        return "unclear"
+
     def calibrate_face(self, pid: int, neutral: list, prompts: dict[str, list] | None = None,
                        wink_left: list | None = None) -> dict:
-        def arr(x):
-            a = np.asarray(x, dtype=float)
-            if a.ndim != 2 or a.shape[1] not in (FACE_D, FACE_D + 1) or len(a) < 3:
-                raise ServiceError("face frames must be (T, 52) or (T, 51)")
-            return a[:, 1:] if a.shape[1] == FACE_D + 1 else a
-        raw_neutral = arr(neutral)
-        lr_swap = False
+        """Resting face, and how far each prompted movement goes on this face. The left wink checks the camera's
+        left/right: 'mirrored' means the frames arrived swapped, so this calibration's own frames are swapped back
+        here, and the browser is told to correct that camera from now on (side_check)."""
+        raw_neutral = self._face_frames(neutral)
+        side = "skipped"
         if wink_left is not None:
-            w = arr(wink_left)
-            lr_swap = bool(np.percentile(w[:, FACE_IDX["eyeBlinkRight"]], 90) >
-                           np.percentile(w[:, FACE_IDX["eyeBlinkLeft"]], 90))
-
-        def orient(a):
-            return mirror_vec(a) if lr_swap else a
-        neutral_v = np.median(orient(raw_neutral), axis=0)
-        gain = np.ones(FACE_D)
-        for group, frames in (prompts or {}).items():
-            if group not in GAIN_GROUPS:
+            side = self.wink_side(np.median(raw_neutral, axis=0), self._face_frames(wink_left))
+        lr_swap = side == "mirrored"
+        neutral_v, deadzone = neutral_from_frames(orient(raw_neutral, lr_swap))
+        rise = np.full(FACE_D, np.nan)
+        for prompt, frames in (prompts or {}).items():
+            if prompt not in CALIBRATION_PROMPTS:
                 continue
-            a = orient(arr(frames))
-            for name in GAIN_GROUPS[group]:
+            a = self._face_frames(frames, lr_swap)
+            for name in CALIBRATION_PROMPTS[prompt]:
                 k = FACE_IDX[name]
-                peak = float(np.percentile(a[:, k], 90) - neutral_v[k])
-                gain[k] = float(np.clip(0.85 / max(peak, 0.1), 0.8, 3.0))
-        cal = {"neutral": np.round(neutral_v, 4).tolist(), "gain": np.round(gain, 3).tolist(), "lr_swap": lr_swap}
+                r = float(np.percentile(a[:, k], 90) - neutral_v[k])
+                if r >= MIN_RISE:
+                    rise[k] = r
+                    m = int(MIRROR_PERM[k])
+                    if m != k and FACE_DIMS[m] not in CALIBRATION_PROMPTS[prompt] and np.isnan(rise[m]):
+                        rise[m] = r   # one-sided prompt (jaw to the left): assume the other side moves as far
+        cal = FaceCalibration(neutral=neutral_v, deadzone=deadzone, rise=rise).to_dict()
+        cal["side_check"] = side
         self.store.set_calibration(pid, "face", cal)
         return cal
 

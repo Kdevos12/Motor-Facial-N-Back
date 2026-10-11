@@ -48,6 +48,10 @@ class MotionItem:
     tags: list[str] = field(default_factory=list)
     threshold: float = 0.45   # per-item acceptance threshold (see calibration.py)
     chiral: bool = False      # mirrored version is distinguishable -> "switch sides" allowed
+    threshold_upper: float | None = None   # the same when only the upper body is scored (framing 'upper')
+    chiral_upper: bool | None = None
+    heading_min_deg: float | None = None   # signed facing range during the move (0 = facing the screen)
+    heading_max_deg: float | None = None
     frames: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     def meta(self) -> dict:
@@ -66,9 +70,7 @@ def compute_metrics(frames: np.ndarray) -> dict:
     hip_d = np.linalg.norm(mid_hip[:, [0, 2]] - origin, axis=-1)
     footprint = max(float(hip_d.max()), float(ank_d[grounded].max()) if grounded.any() else 0.0)
     reach = float(np.linalg.norm(horiz, axis=-1).max())
-    hip_vec = frames[:, J["l_hip"]] - frames[:, J["r_hip"]]
-    fwd = np.cross(hip_vec, [0.0, 1.0, 0.0])
-    yaw = np.unwrap(np.arctan2(fwd[:, 0], fwd[:, 2]))
+    yaw = heading_track(frames)
     rotation = float(np.degrees(np.abs(yaw - yaw[0]).max()))
     facing = float(np.degrees(np.abs(yaw).max()))
     mirror_err = float(np.linalg.norm(frames - mirror_seq(frames), axis=-1).mean())
@@ -87,7 +89,15 @@ def compute_metrics(frames: np.ndarray) -> dict:
         "footprint_m": round(footprint, 3), "reach_m": round(reach, 3),
         "rotation_deg": round(rotation, 1), "facing_away_deg": round(facing, 1),
         "sided": mirror_err > 0.03, "body_part": body_part,
+        "heading_min_deg": round(float(np.degrees(yaw.min())), 1), "heading_max_deg": round(float(np.degrees(yaw.max())), 1),
     }
+
+
+def heading_track(frames: np.ndarray) -> np.ndarray:
+    """Facing angle (rad, unwrapped) of the hips per frame: 0 = facing the screen, positive = turned to the left."""
+    hip_vec = frames[:, J["l_hip"]] - frames[:, J["r_hip"]]
+    fwd = np.cross(hip_vec, [0.0, 1.0, 0.0])
+    return np.unwrap(np.arctan2(fwd[:, 0], fwd[:, 2]))
 
 
 def _all_primitives() -> list[Primitive]:
@@ -189,6 +199,9 @@ class MotionLibrary:
         for it in items:
             if it.id in self.items:
                 raise ValueError(f"duplicate item id {it.id}")
+            if it.heading_min_deg is None and it.frames is not None:   # packs written before these fields
+                yaw = np.degrees(heading_track(np.asarray(it.frames, float)))
+                it.heading_min_deg, it.heading_max_deg = round(float(yaw.min()), 1), round(float(yaw.max()), 1)
             self.items[it.id] = it
 
     def __len__(self) -> int:
@@ -203,7 +216,12 @@ class MotionLibrary:
 
     def filter(self, *, categories: list[str] | None = None, complexity: tuple[int, int] = (1, 5),
                flexibility: str = "high", space: str = "small", allow_turn_away: bool = False,
-               exclude: set[str] | frozenset = frozenset(), sources: list[str] | None = None) -> list[MotionItem]:
+               exclude: set[str] | frozenset = frozenset(), sources: list[str] | None = None,
+               framing: str = "full", camera_yaw_deg: float = 0.0, stance_mirror: bool = False) -> list[MotionItem]:
+        """``framing`` 'upper' keeps the moves done with the arms and trunk only. ``camera_yaw_deg`` is where the
+        camera sees the user from (measured at the start of a block): 'turning the back to the camera' is judged
+        from the camera, not from the screen, for every side the move can be asked on (one-sided moves are also
+        asked mirrored; stance moves follow the stance)."""
         max_fp, max_reach = SPACE_LIMITS.get(space, SPACE_LIMITS["small"])
         flex_level = FLEX.index(flexibility)
         out = []
@@ -216,7 +234,9 @@ class MotionLibrary:
                 continue
             if it.footprint_m > max_fp or it.reach_m > max_reach:
                 continue
-            if not allow_turn_away and it.facing_away_deg > 100:
+            if framing == "upper" and it.body_part != "upper":
+                continue
+            if not allow_turn_away and self.away_from_camera(it, camera_yaw_deg, stance_mirror) > 100:
                 continue
             if it.id in exclude:
                 continue
@@ -224,6 +244,28 @@ class MotionLibrary:
                 continue
             out.append(it)
         return out
+
+    @staticmethod
+    def away_from_camera(it: MotionItem, camera_yaw_deg: float = 0.0, stance_mirror: bool = False) -> float:
+        """Largest angle (deg) between the user's front and the camera during the move, over the sides it can be
+        performed on. Positive camera yaw: the camera is on the user's right; positive heading: turned left."""
+        lo = it.heading_min_deg if it.heading_min_deg is not None else -it.facing_away_deg
+        hi = it.heading_max_deg if it.heading_max_deg is not None else it.facing_away_deg
+        if it.stance_based:
+            ranges = [(-hi, -lo)] if stance_mirror else [(lo, hi)]
+        elif it.sided:
+            ranges = [(lo, hi), (-hi, -lo)]
+        else:
+            ranges = [(lo, hi)]
+        return max(max(abs(camera_yaw_deg + a), abs(camera_yaw_deg + b)) for a, b in ranges)
+
+    def threshold(self, item_id: str, framing: str = "full") -> float:
+        it = self.items[item_id]
+        return it.threshold_upper if framing == "upper" and it.threshold_upper is not None else it.threshold
+
+    def chiral(self, item_id: str, framing: str = "full") -> bool:
+        it = self.items[item_id]
+        return bool(it.chiral_upper) if framing == "upper" and it.chiral_upper is not None else it.chiral
 
     def stats(self) -> dict:
         cats: dict[str, int] = {}
@@ -255,6 +297,9 @@ def apply_calibration(items: list[MotionItem], calib: dict[str, dict]) -> None:
         if c:
             it.threshold = float(c["threshold"])
             it.chiral = bool(c["chiral"])
+            if "threshold_upper" in c:
+                it.threshold_upper = float(c["threshold_upper"])
+                it.chiral_upper = bool(c["chiral_upper"])
         else:
             it.chiral = it.sided
 

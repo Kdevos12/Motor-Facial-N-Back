@@ -55,7 +55,7 @@ export async function libraryView(modality) {
       h('div', { class: 'row', style: { gap: '6px' } },
         h('span', { class: 'tag' }, label(it.category)), h('span', { class: 'tag' }, `C${it.complexity}`),
         it.status === 'mastered' ? h('span', { class: 'tag mastered' }, 'mastered') : it.status === 'learning' ? h('span', { class: 'tag learning' }, 'learning') : null,
-        it.available === false ? h('span', { class: 'tag' }, 'filtered') : null));
+        it.available === false ? h('span', { class: 'tag', title: it.unavailable_reason || 'hidden by your settings' }, it.unavailable_reason ? (it.unavailable_reason.startsWith('not detected') ? 'not detected' : 'needs calibration') : 'filtered') : null));
   };
 
   function render(reset = true) {
@@ -104,7 +104,7 @@ export async function libraryView(modality) {
       segmented([['motor', 'Moves'], ['facial', 'Expressions']], modality, (v) => { location.hash = `#/library/${v}`; })),
     h('div', { class: 'toolbar' }, search,
       segmented([[0, 'All levels'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], 0, (v) => { f.cx = v; render(); }),
-      segmented([['all', 'All'], ['mastered', 'Mastered'], ['learning', 'Learning'], ['excluded', 'Excluded']].concat(modality === 'motor' ? [['unavailable', 'Filtered out']] : []), 'all', (v) => { f.status = v; render(); }),
+      segmented([['all', 'All'], ['mastered', 'Mastered'], ['learning', 'Learning'], ['excluded', 'Excluded'], ['unavailable', modality === 'motor' ? 'Filtered out' : 'Locked']], 'all', (v) => { f.status = v; render(); }),
       count),
     chips(cats.map((c) => [c, label(c)]), [], (v) => { f.cats = v; render(); }),
     grid, h('div', { class: 'row', style: { justifyContent: 'center' } }, more)));

@@ -22,7 +22,7 @@ export const api = {
   profile: (id) => req('GET', `/api/profiles/${id}`),
   patchProfile: (id, patch) => req('PATCH', `/api/profiles/${id}`, patch),
   deleteProfile: (id) => req('DELETE', `/api/profiles/${id}`),
-  calibrateBody: (id, frames) => req('PUT', `/api/profiles/${id}/calibration/body`, { frames }),
+  calibrateBody: (id, frames, framing = 'full') => req('PUT', `/api/profiles/${id}/calibration/body`, { frames, framing }),
   calibrateFace: (id, body) => req('PUT', `/api/profiles/${id}/calibration/face`, body),
   setExcluded: (id, modality, itemId, excluded) =>
     req('PUT', `/api/profiles/${id}/exclusions/${modality}/${encodeURIComponent(itemId)}`, { excluded }),

@@ -33,6 +33,7 @@ export async function trainView(modality) {
 
   const twists = {};
   let twistCard = null;
+  let framing = ms.framing || 'full';
   if (modality === 'motor') {
     twists.variable_n = h('input', { type: 'checkbox', checked: !!ms.variable_n });
     twists.chirality = h('input', { type: 'range', min: 0, max: 0.6, step: 0.05, value: ms.chirality_p || 0 });
@@ -42,7 +43,11 @@ export async function trainView(modality) {
     twistCard = h('div', { class: 'card stack' }, h('h3', {}, 'Twists'),
       h('label', { class: 'switch' }, h('span', {}, 'Variable N', h('div', { class: 'small muted' }, 'Some trials ask for N−1 or N+1.')), twists.variable_n),
       h('div', { class: 'field' }, h('label', {}, 'Switch sides (chirality) instructions'), twists.chirality, chirLabel),
-      h('label', { class: 'switch' }, h('span', {}, 'Sequence mode (experimental)', h('div', { class: 'small muted' }, '“Do N−2 then N”: two moves in a row.')), twists.sequence));
+      h('label', { class: 'switch' }, h('span', {}, 'Sequence mode (experimental)', h('div', { class: 'small muted' }, '“Do N−2 then N”: two moves in a row.')), twists.sequence),
+      h('div', { class: 'field' }, h('label', {}, 'Framing'),
+        segmented([['full', 'Whole body'], ['upper', 'Upper body (close camera / seated)']], framing, (v) => { framing = v; })),
+      h('p', { class: 'small muted' }, 'Upper body uses only arm and trunk moves and does not score the legs. ',
+        h('a', { href: '#/help/camera' }, 'Or use your phone as the camera'), '.'));
   }
 
   const start = async () => {
@@ -52,6 +57,7 @@ export async function trainView(modality) {
       overrides.variable_n = twists.variable_n.checked;
       overrides.chirality_p = Number(twists.chirality.value);
       overrides.sequence_p = twists.sequence.checked ? 0.3 : 0;
+      overrides.framing = framing;
     }
     try {
       await api.patchProfile(prof.id, { settings: { [modality]: { ...overrides, ...(manual ? { n } : {}) } } });

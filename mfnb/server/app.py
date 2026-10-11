@@ -5,14 +5,18 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 import numpy as np
 from pydantic import BaseModel, Field
 
 from .. import __version__, assets, config
+from . import ipcam
 from ..face.blendshapes import DIMS as FACE_DIMS
 from ..face.blendshapes import NAMES as FACE_NAMES
+from ..face.blendshapes import REST_MEAN as FACE_REST
+from ..face.blendshapes import TYPICAL_MAX as FACE_TYPICAL_MAX
+from ..face.blendshapes import UNVERIFIED
 from ..face.expressions import FACE_CATEGORIES
 from ..motion.library import CATEGORIES
 from ..motion.skeleton import meta as skeleton_meta
@@ -38,6 +42,9 @@ class BlockIn(BaseModel):
     n: int | None = None
     overrides: dict[str, Any] | None = None
     seed: int | None = None
+    face_neutral: list | None = None   # 2 s of the user's relaxed face, taken at the camera check
+    view_rest: dict | None = None      # motor: {frames, visibility} of ~2 s standing relaxed, facing the screen
+    simulated: bool = False            # demo mode: no camera, responses already in the screen's frame
 
 
 class ResponseIn(BaseModel):
@@ -48,6 +55,7 @@ class ResponseIn(BaseModel):
 
 class BodyCalibrationIn(BaseModel):
     frames: list
+    framing: str = "full"
 
 
 class FaceCalibrationIn(BaseModel):
@@ -81,8 +89,47 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     def meta():
         return {"version": __version__, "skeleton": skeleton_meta(), "motor_categories": CATEGORIES,
                 "face_categories": FACE_CATEGORIES, "face_names": FACE_NAMES, "face_dims": FACE_DIMS,
+                "face_typical_max": np.round(FACE_TYPICAL_MAX, 3).tolist(), "face_rest": np.round(FACE_REST, 3).tolist(),
                 "default_settings": config.DEFAULT_SETTINGS,
                 "library": {"motor": trainer.motor.stats(), "facial": trainer.face.stats()}}
+
+    # phone camera over Wi-Fi: the server reads its MJPEG stream and hands the page the newest frame (same origin)
+    def _camera_reader(url: str) -> "ipcam.Reader":
+        try:
+            return ipcam.reader(url)
+        except ipcam.CameraURLError as err:
+            raise HTTPException(400, str(err)) from None
+
+    def _camera_failed(r: "ipcam.Reader"):
+        err = r.error
+        if isinstance(err, ipcam.CameraURLError):
+            raise HTTPException(400, str(err))
+        raise HTTPException(502, ipcam.describe(err) if err else "The phone camera stopped.")
+
+    @app.get("/api/camera/check")
+    def camera_check(url: str):
+        r = _camera_reader(url)
+        seq, frame = r.next_frame(0, wait_s=ipcam.CONNECT_TIMEOUT_S + 2)
+        if frame is None:
+            if r.error is not None or not r.alive:
+                _camera_failed(r)
+            raise HTTPException(504, "The phone app answered but sent no picture: is its camera running?")
+        # the url keeps the login, if any: the page needs it to reconnect (it stays on this computer)
+        return {"ok": True, "url": r.used, "label": ipcam.label(r.used), "bytes": len(frame)}
+
+    @app.get("/api/camera/frame")
+    def camera_frame(url: str, after: int = 0):
+        r = _camera_reader(url)
+        seq, frame = r.next_frame(after, wait_s=2.0)
+        if frame is None:
+            if r.error is not None or not r.alive:
+                _camera_failed(r)
+            return Response(status_code=204, headers={"X-Frame-Seq": str(seq), "Cache-Control": "no-store"})
+        return Response(frame, media_type="image/jpeg", headers={"X-Frame-Seq": str(seq), "Cache-Control": "no-store"})
+
+    @app.get("/api/camera/discover")
+    def camera_discover():
+        return {"found": ipcam.discover(), "gateways": ipcam.default_gateways()}
 
     @app.get("/api/assets/status")
     def assets_status():
@@ -115,7 +162,7 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     @app.put("/api/profiles/{pid}/calibration/body")
     def calibrate_body(pid: int, body: BodyCalibrationIn):
         need_profile(pid)
-        return trainer.calibrate_body(pid, body.frames)
+        return trainer.calibrate_body(pid, body.frames, body.framing)
 
     @app.put("/api/profiles/{pid}/calibration/face")
     def calibrate_face(pid: int, body: FaceCalibrationIn):
@@ -158,11 +205,21 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     def face_library(profile_id: int | None = None):
         excluded = store.exclusions(profile_id, "facial") if profile_id else set()
         stats = store.get_stats(profile_id, "facial") if profile_id else {}
+        prof = store.get_profile(profile_id) if profile_id else None
+        measured = trainer.face_calibration(prof).measured if prof else set()
+        playable = {it.id for it in trainer.face.filter(measured=measured)} if prof else None
         out = []
         for it in trainer.face.items.values():
             d = it.meta()
             d["excluded"] = it.id in excluded
             d["status"] = (stats.get(it.id) or {}).get("status", "new")
+            if playable is not None:
+                d["available"] = it.id in playable
+                if not d["available"]:
+                    missing = sorted({n[:-4] if n.endswith("Left") else n[:-5] if n.endswith("Right") else n
+                                      for n in it.shapes_needed if n in UNVERIFIED and n not in measured})
+                    d["unavailable_reason"] = ("needs face calibration" if not prof["calibration"].get("face") else
+                                               "not detected in your calibration: " + ", ".join(missing))
             out.append(d)
         return out
 
@@ -176,7 +233,8 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
     @app.post("/api/blocks")
     def start_block(body: BlockIn):
         need_profile(body.profile_id)
-        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed)
+        return trainer.start_block(body.profile_id, body.modality, body.n, body.overrides, body.seed, body.face_neutral,
+                                   body.view_rest, body.simulated)
 
     @app.get("/api/blocks/{bid}")
     def get_block(bid: int, report: bool = False):

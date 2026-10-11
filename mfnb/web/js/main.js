@@ -5,6 +5,7 @@ import { loadState, setProfile, state } from './state.js';
 import { h, mount, spinner, toast } from './ui.js';
 import { dashboardView } from './views/dashboard.js';
 import { homeView, welcomeView } from './views/home.js';
+import { helpView } from './views/help.js';
 import { libraryView } from './views/library.js';
 import { reportView } from './views/report.js';
 import { sessionView } from './views/session.js';
@@ -22,6 +23,7 @@ const routes = [
   [/^dashboard$/, () => dashboardView()],
   [/^settings$/, () => settingsView()],
   [/^calibrate\/(body|face)$/, (m) => calibrateView(m[1])],
+  [/^help\/(camera)$/, () => helpView('phone-camera')],
 ];
 
 async function route() {

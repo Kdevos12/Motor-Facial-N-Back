@@ -73,3 +73,11 @@ export function segmented(options, value, onChange) {
 export function fmtPct(x) { return x === null || x === undefined ? '–' : `${Math.round(x * 100)}%`; }
 export function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 export function titleCase(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Item name as shown: a mirrored facial item names the other side ("left eye" -> "right eye").
+export function itemLabel(name, mirrored, modality) {
+  if (!mirrored) return name;
+  if (modality === 'motor') return `${name} (other side)`;
+  const swapped = name.replace(/\b(left|right|Left|Right)\b/g, (w) => ({ left: 'right', right: 'left', Left: 'Right', Right: 'Left' }[w]));
+  return swapped === name ? `${name} (other side)` : swapped;
+}

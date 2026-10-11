@@ -29,7 +29,8 @@ def main():
                                     args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
                                           "--enable-unsafe-swiftshader"])
         page = browser.new_page(viewport={"width": 1366, "height": 860})
-        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+        # MediaPipe prints its own INFO lines through console.error
+        page.on("console", lambda m: errors.append(m.text) if m.type == "error" and not m.text.startswith("INFO:") else None)
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(BASE + "/?simulate#/home")
         # first run: create a profile
@@ -77,6 +78,23 @@ def main():
         page.screenshot(path=f"{OUT}/08_face_watch.png")
         page.wait_for_selector("text=block report", timeout=120000)
         page.screenshot(path=f"{OUT}/09_face_report.png", full_page=True)
+        # upper-body framing (camera too close / seated)
+        api("PATCH", f"/api/profiles/{pid}", {"settings": {"motor": {"framing": "upper"}}})
+        page.goto(BASE + "/?simulate#/train/motor")
+        page.wait_for_selector("text=Start block")
+        page.click("text=Start block")
+        page.wait_for_selector("text=Room above your head")
+        page.wait_for_timeout(1200)
+        page.screenshot(path=f"{OUT}/09b_upper_camcheck.png")
+        page.click("text=Start the block")
+        page.wait_for_selector("text=block report", timeout=120000)
+        upper = api("GET", f"/api/blocks/{api('GET', f'/api/dashboard/{pid}')['recent'][0]['block_id']}")
+        assert upper["framing"] == "upper" and all(i["body_part"] == "upper" for i in upper["items"].values()), upper["framing"]
+        api("PATCH", f"/api/profiles/{pid}", {"settings": {"motor": {"framing": "full"}}})
+        # help page
+        page.goto(BASE + "/?simulate#/help/camera")
+        page.wait_for_selector("text=Using your phone as the camera")
+        page.screenshot(path=f"{OUT}/09c_help.png", full_page=True)
         # library, dashboard, settings
         page.goto(BASE + "/?simulate#/library/motor")
         page.wait_for_selector(".lib-card")
@@ -117,7 +135,15 @@ def main():
         page.click("text=Start block")
         page.wait_for_selector("text=Camera check", timeout=60000)
         page.wait_for_timeout(3000)
+        page.click("summary:has-text('Camera')")
+        page.wait_for_timeout(800)
         page.screenshot(path=f"{OUT}/15_real_camcheck.png")
+        page.goto(BASE + "/#/train/facial")
+        page.wait_for_selector("text=Start block")
+        page.click("text=Start block")
+        page.wait_for_selector("text=Camera check", timeout=60000)
+        page.wait_for_timeout(3000)
+        page.screenshot(path=f"{OUT}/17_real_face_camcheck.png")
         browser.close()
     dash = api("GET", f"/api/dashboard/{pid}")
     print("blocks:", dash["totals"]["blocks"], "motor history:", dash["modalities"]["motor"]["history"],
