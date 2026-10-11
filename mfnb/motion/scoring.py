@@ -27,14 +27,20 @@ HIP_JOINTS = [J["l_hip"], J["r_hip"]]
 LEG_JOINTS = [J[n] for n in ("l_knee", "r_knee", "l_ankle", "r_ankle")]
 FRAMINGS = ("full", "upper")   # whole body in view / head to mid-thigh (seated or close camera)
 DEFAULT_THRESHOLD = 0.45
+# per-item thresholds (motion/calibration.py) reject near-misses of clean copies; a real webcam response is noisier,
+# so no move asks for more than this
+THRESHOLD_CAP = 0.50
 COST_CAP = 3.0
 MIN_KEYPOSE_DEV = 0.15
 KEYPOSE_SLACK = 4  # frames (at FEATURE_FPS) searched around the aligned key pose
+# a key pose counts from KEYPOSE_FLOOR of the way from the start stance to it, fully reproduced at KEYPOSE_FULL
+KEYPOSE_FLOOR = 0.05
+KEYPOSE_FULL = 0.50
 
 
 @dataclass(frozen=True)
 class Tolerance:
-    angle_deg: float = 38.0
+    angle_deg: float = 52.0      # webcam pose tracking is noisy: about 40-50 deg on a correct move
     strictness: float = 1.0        # >1 stricter, <1 more lenient
     flexibility: str = "medium"    # scales lower-body tolerance
     depth_weight: float = 0.5      # monocular depth is noisy: z counts less
@@ -158,7 +164,7 @@ class Scorer:
             jbest = lo + int(np.argmin(window))
             c = float(window.min())
             r = 1.0 - c / max(float(dev[k]), MIN_KEYPOSE_DEV)
-            q = float(np.clip((r - 0.15) / 0.55, 0.0, 1.0))
+            q = float(np.clip((r - KEYPOSE_FLOOR) / (KEYPOSE_FULL - KEYPOSE_FLOOR), 0.0, 1.0))
             repro.append(q)
             kp_out.append({"t_target": round(k / FEATURE_FPS, 2), "t_response": round(jbest / FEATURE_FPS, 2),
                            "hit": q >= 0.5, "reproduced": round(q, 2)})
