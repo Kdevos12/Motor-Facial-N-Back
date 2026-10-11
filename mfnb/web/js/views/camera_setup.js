@@ -2,7 +2,7 @@
 import { api } from '../api.js';
 import { refreshProfile, setProfile, state } from '../state.js';
 import { h, toast } from '../ui.js';
-import { cameraKey, cameraPrefs, listCameras, liveCamera, onDeviceChange } from '../vision/camera.js';
+import { cameraKey, cameraPrefs, checkNetworkCamera, listCameras, liveCamera, onDeviceChange } from '../vision/camera.js';
 
 // Options for a tracker reading this modality's camera.
 export function trackerOptions(modality) {
@@ -35,7 +35,8 @@ async function savePrefs(modality, patch) {
   return prefs;
 }
 
-// <select> of cameras + rotation. onChange(prefs) runs after the choice is saved.
+// <select> of cameras (plus a phone camera app over Wi-Fi) + rotation. onChange(prefs) runs after the choice is saved.
+const NET = '__network';
 export function cameraPicker(modality, onChange) {
   let prefs = cameraPrefs(modality);
   const sel = h('select', { 'aria-label': 'Camera' }, h('option', { value: '' }, 'Automatic (default camera)'));
@@ -43,24 +44,48 @@ export function cameraPicker(modality, onChange) {
     [[0, 'Upright'], [90, 'Rotate 90° ↻'], [180, 'Upside down'], [270, 'Rotate 90° ↺']].map(([v, l]) =>
       h('option', { value: v, selected: Number(prefs.rotate || 0) === v }, l)));
   const note = h('span', { class: 'small muted' });
+  // phone camera app over Wi-Fi (IP Webcam, DroidCam…)
+  const urlInput = h('input', { type: 'text', placeholder: 'e.g. 192.168.43.1:8080 (shown by the phone app)', value: prefs.url || '',
+    style: { minWidth: '260px', flex: '1' } });
+  const urlStatus = h('div', { class: 'small muted' });
+  const connect = h('button', { class: 'btn', type: 'button', onclick: async () => {
+    urlStatus.textContent = 'Connecting…';
+    try {
+      const r = await checkNetworkCamera(urlInput.value);
+      urlInput.value = r.url;
+      const p = await savePrefs(modality, { deviceId: '', label: r.label, url: r.url });
+      urlStatus.textContent = `Connected: ${r.label}`;
+      await fill();
+      onChange && onChange(p);
+    } catch (err) { urlStatus.textContent = err.message; }
+  } }, 'Connect');
+  const urlRow = h('div', { class: 'stack', style: { gap: '4px' } },
+    h('div', { class: 'row', style: { flexWrap: 'wrap' } }, urlInput, connect), urlStatus,
+    h('div', { class: 'small muted' }, 'Start the camera app on the phone (e.g. IP Webcam → Start server), then type the address it shows. ',
+      h('a', { href: '#/help/camera' }, 'Guide')));
+  urlRow.hidden = !prefs.url;
   const fill = async (ask = false) => {
     prefs = cameraPrefs(modality);
     let cams = [];
     try { cams = await listCameras(ask === true); } catch { /* no camera API */ }
     const live = liveCamera();
-    const current = prefs.deviceId || '';
-    sel.replaceChildren(h('option', { value: '' }, `Automatic (${live.label && !current ? live.label : 'default camera'})`),
-      ...cams.map((c) => h('option', { value: c.deviceId, selected: c.deviceId === current || (!!prefs.label && c.label === prefs.label) }, c.label)));
+    const current = prefs.url ? '' : (prefs.deviceId || '');
+    sel.replaceChildren(h('option', { value: '' , selected: !prefs.url && !current }, `Automatic (${live.label && !current && !prefs.url ? live.label : 'default camera'})`),
+      ...cams.map((c) => h('option', { value: c.deviceId, selected: !prefs.url && (c.deviceId === current || (!!prefs.label && c.label === prefs.label)) }, c.label)),
+      h('option', { value: NET, selected: !!prefs.url }, prefs.url ? `${prefs.label || 'Phone over Wi-Fi'}` : 'Phone over Wi-Fi (camera app)…'));
     if (current && !cams.some((c) => c.deviceId === current || c.label === prefs.label)) {
       sel.append(h('option', { value: current, selected: true }, `${prefs.label || 'Saved camera'} (not connected)`));
     }
-    note.textContent = !cams.length ? 'No camera found. Plug one in (or start the phone app), then press Refresh.'
+    urlRow.hidden = sel.value !== NET;
+    note.textContent = prefs.url ? '' : !cams.length ? 'No camera found. Plug one in, or choose “Phone over Wi-Fi”, then press Refresh.'
       : cams.every((c) => /^Camera \d+$/.test(c.label)) ? 'Press Refresh and allow the camera to see the camera names.' : '';
   };
   sel.onchange = async () => {
+    if (sel.value === NET) { urlRow.hidden = false; urlInput.focus(); return; }
+    urlRow.hidden = true;
     const opt = sel.selectedOptions[0];
     try {
-      const p = await savePrefs(modality, { deviceId: sel.value, label: sel.value ? opt.textContent.replace(/ \(not connected\)$/, '') : '' });
+      const p = await savePrefs(modality, { deviceId: sel.value, url: '', label: sel.value ? opt.textContent.replace(/ \(not connected\)$/, '') : '' });
       onChange && onChange(p);
     } catch (err) { toast(err.message, 'error'); }
   };
@@ -71,7 +96,7 @@ export function cameraPicker(modality, onChange) {
   const off = onDeviceChange(() => fill());
   fill();
   const el = h('div', { class: 'stack', style: { gap: '6px' } },
-    h('div', { class: 'row', style: { flexWrap: 'wrap' } }, sel, rot, refresh), note);
+    h('div', { class: 'row', style: { flexWrap: 'wrap' } }, sel, rot, refresh), note, urlRow);
   el.cleanup = off;
   return el;
 }

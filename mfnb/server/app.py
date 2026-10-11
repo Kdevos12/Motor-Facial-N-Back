@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import numpy as np
 from pydantic import BaseModel, Field
 
 from .. import __version__, assets, config
+from . import ipcam
 from ..face.blendshapes import DIMS as FACE_DIMS
 from ..face.blendshapes import NAMES as FACE_NAMES
 from ..face.blendshapes import REST_MEAN as FACE_REST
@@ -91,6 +92,29 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
                 "face_typical_max": np.round(FACE_TYPICAL_MAX, 3).tolist(), "face_rest": np.round(FACE_REST, 3).tolist(),
                 "default_settings": config.DEFAULT_SETTINGS,
                 "library": {"motor": trainer.motor.stats(), "facial": trainer.face.stats()}}
+
+    # phone camera over Wi-Fi: relay its MJPEG stream from this origin (the browser cannot read another origin)
+    @app.get("/api/camera/check")
+    def camera_check(url: str):
+        try:
+            resp, ctype, used = ipcam.open_stream(url)
+        except ipcam.CameraURLError as err:
+            raise HTTPException(400, str(err)) from None
+        except (OSError, ValueError) as err:
+            raise HTTPException(502, ipcam.describe(err)) from None
+        resp.close()
+        return {"ok": True, "url": used, "content_type": ctype, "label": ipcam.label(used)}
+
+    @app.get("/api/camera/stream")
+    def camera_stream(url: str):
+        try:
+            resp, ctype, _ = ipcam.open_stream(url, timeout=ipcam.STREAM_TIMEOUT_S)
+        except ipcam.CameraURLError as err:
+            raise HTTPException(400, str(err)) from None
+        except (OSError, ValueError) as err:
+            raise HTTPException(502, ipcam.describe(err)) from None
+        return StreamingResponse(ipcam.iter_stream(resp), media_type=ctype,
+                                 headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
     @app.get("/api/assets/status")
     def assets_status():

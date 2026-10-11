@@ -1,12 +1,15 @@
 // Camera access: one shared stream, a chosen camera per modality (e.g. the phone for moves, the laptop webcam for
 // faces), rotation for a phone mounted sideways, and notice when the feed stops (unplugged, scrcpy closed...).
+// A camera can also be a phone camera app on the network (prefs.url): the local server relays its MJPEG stream and
+// the page turns it into an ordinary video stream, so everything downstream works the same.
 import { state } from '../state.js';
 
 let stream = null;
-let streamDevice = null;          // deviceId of the live stream ('' = browser default)
+let streamDevice = null;          // deviceId of the live stream ('' = browser default, 'url:…' = network camera)
+let urlSource = null;             // {img, timers, stalled, label} while a network camera is open
 const listeners = new Set();
 
-export const DEFAULT_PREFS = { deviceId: '', label: '', rotate: 0 };
+export const DEFAULT_PREFS = { deviceId: '', label: '', rotate: 0, url: '' };
 
 // Camera preferences of the active profile for a modality.
 export function cameraPrefs(modality) {
@@ -22,7 +25,7 @@ export function cameraKey(prefs) {
 
 export function trackMuted() {
   const t = stream?.getVideoTracks()[0];
-  return !t || t.readyState !== 'live' || t.muted;
+  return !t || t.readyState !== 'live' || t.muted || !!urlSource?.stalled;
 }
 
 export function onCameraState(cb) { listeners.add(cb); return () => listeners.delete(cb); }
@@ -48,8 +51,75 @@ async function open(constraints) {
   });
 }
 
-// Open the camera described by prefs ({deviceId, label}); reuses the live stream when it is the same camera.
+// Ask the server whether a network camera answers (and why not).
+export async function checkNetworkCamera(url) {
+  const r = await fetch(`/api/camera/check?url=${encodeURIComponent(url)}`);
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new CameraError(d.detail || 'The phone camera did not answer.');
+  return d;   // {url, label, content_type}
+}
+
+function sleepMs(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+async function openNetworkCamera(prefs) {
+  const img = new Image();
+  let failed = false;
+  img.onerror = () => { failed = true; if (urlSource?.img === img) emit('ended'); };
+  img.src = `/api/camera/stream?url=${encodeURIComponent(prefs.url)}`;
+  const t0 = performance.now();
+  while (!(img.naturalWidth > 0) && !failed && performance.now() - t0 < 12000) await sleepMs(100);
+  if (!(img.naturalWidth > 0)) {
+    img.onerror = null; img.src = '';
+    let msg = 'The phone camera did not answer.';
+    try { await checkNetworkCamera(prefs.url); } catch (err) { msg = err.message; }
+    throw new CameraError(msg);
+  }
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const draw = () => {
+    const w = img.naturalWidth; const hgt = img.naturalHeight;
+    if (!w) return;
+    if (canvas.width !== w || canvas.height !== hgt) { canvas.width = w; canvas.height = hgt; }
+    try { ctx.drawImage(img, 0, 0, w, hgt); } catch { /* frame not decodable yet */ }
+  };
+  draw();
+  const src = { img, timers: [], stalled: false, label: prefs.label || 'Phone over Wi-Fi' };
+  src.timers.push(setInterval(draw, 33));
+  // a frozen picture (Wi-Fi drop, app closed) shows as identical frames: report it like a muted camera
+  const probe = document.createElement('canvas');
+  probe.width = 16; probe.height = 12;
+  const pctx = probe.getContext('2d', { willReadFrequently: true });
+  let last = null; let same = 0;
+  src.timers.push(setInterval(() => {
+    try { pctx.drawImage(img, 0, 0, 16, 12); } catch { return; }
+    const sig = pctx.getImageData(0, 0, 16, 12).data.join(',');
+    same = sig === last ? same + 1 : 0;
+    last = sig;
+    if (same >= 4 && !src.stalled) { src.stalled = true; if (urlSource === src) emit('muted'); }
+    if (same === 0 && src.stalled) { src.stalled = false; if (urlSource === src) emit('unmuted'); }
+  }, 1000));
+  urlSource = src;
+  return canvas.captureStream(30);
+}
+
+function closeNetworkCamera() {
+  if (!urlSource) return;
+  urlSource.timers.forEach(clearInterval);
+  urlSource.img.onerror = null;
+  urlSource.img.src = '';   // closes the relayed connection
+  urlSource = null;
+}
+
+// Open the camera described by prefs ({deviceId, label} or {url}); reuses the live stream when it is the same camera.
 export async function startCamera(prefs = {}) {
+  if (prefs.url) {
+    const key = `url:${prefs.url}`;
+    if (stream && streamDevice === key && urlSource && !urlSource.stalled) return stream;
+    stopCamera();
+    stream = await openNetworkCamera(prefs);
+    streamDevice = key;
+    return stream;
+  }
   if (!navigator.mediaDevices?.getUserMedia) throw new CameraError('This browser cannot access a camera (use Chrome, Edge or Firefox on http://localhost).');
   const want = prefs.deviceId || '';
   if (stream && streamDevice === want && stream.getVideoTracks().some((t) => t.readyState === 'live')) return stream;
@@ -77,6 +147,7 @@ export async function startCamera(prefs = {}) {
 
 export function stopCamera() {
   if (stream) stream.getTracks().forEach((t) => t.stop());
+  closeNetworkCamera();
   stream = null;
   streamDevice = null;
 }
@@ -86,6 +157,7 @@ export function liveCamera() {
   const t = stream?.getVideoTracks()[0];
   if (!t) return { deviceId: '', label: '' };
   const st = t.getSettings ? t.getSettings() : {};
+  if (urlSource) return { deviceId: '', label: urlSource.label, width: urlSource.img.naturalWidth, height: urlSource.img.naturalHeight };
   return { deviceId: st.deviceId || '', label: t.label || '', width: st.width, height: st.height, frameRate: st.frameRate };
 }
 
