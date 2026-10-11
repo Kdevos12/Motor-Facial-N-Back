@@ -160,6 +160,11 @@ export async function calibrateView(kind) {
       big.textContent = 'Hold still…';
       const rec = await ctl.tracker.record(3);
       if (ctl.stop) return;
+      if (rec.frames.length < 6) {
+        const r = Math.round(ctl.tracker.rate?.() || 0);
+        status.textContent = `You were not tracked long enough (${rec.frames.length} usable pictures in 3 s, tracking at ${r} per second). Stay in view, with good light, and try again.`;
+        return;
+      }
       try {
         const dims = await api.calibrateBody(prof.id, rec.frames, framing);
         big.textContent = 'Done!';
@@ -208,7 +213,7 @@ export async function calibrateView(kind) {
         if (simulate) ctl.tracker.expect(shapes, { correct: true, delay: 0 });
         const rec = await ctl.tracker.record(2);
         if (key === 'eyes_closed') { cue.signal(); await sleep(700); }
-        if (!skip && rec.frames.length >= 10) data[key] = rec.frames;
+        if (!skip && rec.frames.length >= 6) data[key] = rec.frames;
       }
       if (ctl.stop) return;
       skipBtn.remove();

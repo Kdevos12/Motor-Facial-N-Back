@@ -28,6 +28,7 @@ class BaseTracker {
   }
   onFrame(cb) { this.listeners.add(cb); return () => this.listeners.delete(cb); }
   _emit(sample) {
+    this._stamps = [...(this._stamps || []).slice(-29), sample.t];
     this.latest = sample;
     if (this._rec) this._rec.push(sample);
     for (const cb of this.listeners) cb(sample);
@@ -65,6 +66,11 @@ class BaseTracker {
       this._raf = requestAnimationFrame(loop);
     };
     loop();
+  }
+  // Pictures analysed per second, over the last 30 (0 until known).
+  rate() {
+    const t = this._stamps || [];
+    return t.length < 5 ? 0 : (1000 * (t.length - 1)) / Math.max(1, t[t.length - 1] - t[0]);
   }
   stop() { this.running = false; if (this._raf) cancelAnimationFrame(this._raf); }
   // Collect samples for `seconds` (or until stopRecording()).

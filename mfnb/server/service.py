@@ -111,9 +111,14 @@ class Trainer:
     def measure_view(self, pid: int, rest: dict, framing: str) -> tuple[View, str | None]:
         """Camera angle from ~2 s of the user relaxed and facing the screen. Too oblique a camera is refused."""
         f = np.asarray(rest.get("frames", []), dtype=float)
-        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10 or not np.isfinite(f).all():
-            raise ServiceError("You were not tracked while standing still: step back into view and try again.")
         vis = rest.get("visibility")
+        if f.ndim == 3 and f.shape[1:] == (19, 3):
+            keep = np.isfinite(f).all(axis=(1, 2))
+            f = f[keep]
+            if vis is not None and len(vis) == len(keep):
+                vis = np.asarray(vis, dtype=float)[keep]
+        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 6:
+            raise ServiceError("You were not tracked while standing still: step back into view and try again.")
         view = estimate_view(f, None if vis is None else np.asarray(vis, float), framing)
         yaw, tilt = abs(view.yaw_deg), view.tilt_deg
         side = "right" if view.yaw_deg > 0 else "left"     # positive yaw: the camera is on the user's right
@@ -336,8 +341,10 @@ class Trainer:
     # -- calibration -------------------------------------------------------------------
     def calibrate_body(self, pid: int, frames: list, framing: str = "full") -> dict:
         f = np.asarray(frames, dtype=float)
-        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 10:
-            raise ServiceError("need at least 10 frames of 19 joints")
+        if f.ndim == 3:
+            f = f[np.isfinite(f).all(axis=(1, 2))]
+        if f.ndim != 3 or f.shape[1:] != (19, 3) or len(f) < 6:
+            raise ServiceError("You were not tracked long enough: stay in view, with good light, and try again.")
 
         def seg(a, b):
             return float(np.median(np.linalg.norm(f[:, J[a]] - f[:, J[b]], axis=-1)))

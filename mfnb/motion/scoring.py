@@ -250,11 +250,16 @@ def clean_framed(resp: ResponseInput, framing: str = "full") -> tuple[np.ndarray
     required; the hips count when they are in the picture in at least 80% of the frames."""
     frames = np.asarray(resp.frames, dtype=float)
     times = None if resp.times_s is None else np.asarray(resp.times_s, dtype=float)
-    if len(frames) < 5 or not np.isfinite(frames).all():
+    if frames.ndim != 3:
+        return None, "no tracking data", False
+    finite = np.isfinite(frames).all(axis=(1, 2))      # a frame the tracker could not fill is dropped, not fatal
+    frames = frames[finite]
+    times = None if times is None or len(times) != len(finite) else times[finite]
+    if len(frames) < 5:
         return None, "no tracking data", False
     hips_ok = True
-    if resp.visibility is not None:
-        vis_all = np.asarray(resp.visibility, dtype=float)
+    if resp.visibility is not None and len(resp.visibility) == len(finite):
+        vis_all = np.asarray(resp.visibility, dtype=float)[finite]
         if framing == "upper":
             hips_ok = float(np.mean(vis_all[:, HIP_JOINTS].min(-1) > 0.5)) >= 0.8
             joints = ARM_JOINTS + (HIP_JOINTS if hips_ok else [])
