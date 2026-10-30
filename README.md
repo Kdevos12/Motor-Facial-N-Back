@@ -20,6 +20,20 @@ pip install -e .
 mfnb                                                     # opens http://127.0.0.1:8765
 ```
 
+## Android
+
+The Android project is in `android/`. It runs the existing API locally on the phone and
+opens the training UI in an Android WebView; profiles and progress stay in the app's private
+storage. Camera training downloads the pinned MediaPipe files once on first launch (about
+25 MB), so the phone needs internet for that initial download. Camera access is requested
+only when you start a camera-based activity.
+
+Install the generated release APK from
+`android/app/build/outputs/apk/release/app-release.apk`. To rebuild, open `android/` in
+Android Studio or run `./gradlew assembleRelease` from that directory. A signed release
+build requires a local `android/signing.properties` and its matching keystore; do not
+commit either file.
+
 To update later, from the folder where you cloned it (your profiles and progress in `~/.mfnb` are kept):
 
 ```bash

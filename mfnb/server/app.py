@@ -1,6 +1,7 @@
 """FastAPI application: JSON API + the static web app + locally cached CV assets."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,7 @@ from ..motion.skeleton import meta as skeleton_meta
 from ..storage.db import Store
 from .service import ServiceError, Trainer
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+WEB_DIR = Path(os.environ.get("MFNB_WEB_DIR", Path(__file__).resolve().parent.parent / "web"))
 
 
 class ProfileIn(BaseModel):
@@ -143,7 +144,14 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
 
     @app.get("/api/assets/status")
     def assets_status():
-        return assets.status(assets_root)
+        result = assets.status(assets_root)
+        if os.environ.get("MFNB_ANDROID") == "1":
+            from .. import android_server
+
+            result["auto_fetch"] = True
+            result["fetching"] = android_server._asset_download["running"]
+            result["fetch_error"] = android_server._asset_download["error"]
+        return result
 
     # profiles
     @app.get("/api/profiles")
@@ -252,7 +260,8 @@ def create_app(store: Store | None = None, trainer: Trainer | None = None, asset
 
     @app.post("/api/blocks/{bid}/trials/{idx}/response")
     def submit(bid: int, idx: int, body: ResponseIn):
-        return trainer.submit_response(bid, idx, body.model_dump())
+        payload = body.model_dump() if hasattr(body, "model_dump") else body.dict()
+        return trainer.submit_response(bid, idx, payload)
 
     @app.post("/api/blocks/{bid}/finish")
     def finish(bid: int):

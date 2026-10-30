@@ -10,7 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
-from dtaidistance.subsequence.dtw import subsequence_alignment
+try:
+    from dtaidistance.subsequence.dtw import subsequence_alignment
+except ImportError:
+    from ._dtw import subsequence_alignment
 
 from .skeleton import BONES, J, LOWER_BODY_BONES, mirror_seq, point
 

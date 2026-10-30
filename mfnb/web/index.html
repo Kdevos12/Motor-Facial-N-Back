@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Motor &amp; Facial N-Back</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='6' r='4' fill='%234ea8ff'/%3E%3Cpath d='M16 10v10M16 13l-8 4M16 13l8-4M16 20l-6 9M16 20l6 9' stroke='%23ff9a3c' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/css/app.css">
@@ -10,14 +10,36 @@
 <body>
   <header class="topbar">
     <a class="brand" href="#/home"><span class="brand-mark">N</span><span>Motor &amp; Facial N-Back</span></a>
-    <nav class="nav" id="nav">
-      <a href="#/home" data-route="home">Home</a>
-      <a href="#/train/motor" data-route="train/motor">Motor</a>
-      <a href="#/train/facial" data-route="train/facial">Facial</a>
+    <nav class="nav" id="nav" aria-label="Primary navigation">
+      <a href="#/home" data-route="home">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>
+        <span>Home</span>
+      </a>
+      <a href="#/train/motor" data-route="train/motor">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M12 7v6m0-4-5 3m5-3 5 3m-5 1-4 7m4-7 4 7"/></svg></span>
+        <span>Motor</span>
+      </a>
+      <a href="#/train/facial" data-route="train/facial">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15c1 1.2 2.3 2 4 2s3-.8 4-2"/></svg></span>
+        <span>Facial</span>
+      </a>
+      <a href="#/dashboard" data-route="dashboard">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg></span>
+        <span>Progress</span>
+      </a>
       <a href="#/library" data-route="library">Library</a>
-      <a href="#/dashboard" data-route="dashboard">Progress</a>
       <a href="#/settings" data-route="settings">Settings</a>
+      <button class="mobile-more" id="mobile-more" type="button" aria-expanded="false" aria-controls="mobile-more-menu">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </span>
+        <span>More</span>
+      </button>
     </nav>
+    <div class="more-menu" id="mobile-more-menu" hidden>
+      <a href="#/library">Move library</a>
+      <a href="#/settings">Settings</a>
+    </div>
     <div class="profile-switch" id="profile-switch"></div>
   </header>
   <div class="banner" id="banner" hidden></div>

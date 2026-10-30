@@ -87,6 +87,10 @@ export function segmented(options, value, onChange) {
 }
 
 export function fmtPct(x) { return x === null || x === undefined ? '–' : `${Math.round(x * 100)}%`; }
+export function scoreColor(score, threshold = 1) {
+  const progress = Math.max(0, Math.min(1, score / Math.max(threshold, 0.001)));
+  return `hsl(${Math.round(progress * 120)} 82% 52%)`;
+}
 export function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 export function titleCase(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 

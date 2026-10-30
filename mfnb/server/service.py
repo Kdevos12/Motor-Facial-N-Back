@@ -63,6 +63,31 @@ def instruction_text(targets: list[dict]) -> str:
     return " then ".join(one(t) for t in targets)
 
 
+EXPERIMENTAL_THRESHOLD_BAND = 0.10
+
+
+def score_accuracy_range(trials: list[dict]) -> dict[str, float] | None:
+    """Return a threshold-sensitivity range, not a statistical confidence interval."""
+    valid = [t for t in trials if t["valid"] and t["score"] is not None]
+    if not valid:
+        return None
+
+    strict = permissive = 0
+    for trial in valid:
+        result = trial.get("result") or {}
+        score = float(trial["score"])
+        threshold = float(result.get("threshold", 0.0))
+        confused = bool(trial.get("confused_with")) or any(
+            float(lure) > score + 0.03 for lure in result.get("lure_scores", [])
+        )
+        if not confused:
+            strict += score >= threshold + EXPERIMENTAL_THRESHOLD_BAND
+            permissive += score >= max(0.0, threshold - EXPERIMENTAL_THRESHOLD_BAND)
+
+    n = len(valid)
+    return {"low": round(strict / n, 4), "high": round(permissive / n, 4)}
+
+
 class Trainer:
     def __init__(self, store: Store, motor: MotionLibrary | None = None, face: FaceLibrary | None = None):
         self.store = store
@@ -303,6 +328,8 @@ class Trainer:
         valid = [t for t in trials if t["valid"] and t["score"] is not None]
         acc = float(np.mean([bool(t["correct"]) for t in valid])) if valid else None
         mean_score = float(np.mean([t["score"] for t in valid])) if valid else None
+        accuracy_range = (score_accuracy_range(trials)
+                          if block["config"]["settings"].get("experimental_scoring", False) else None)
         mode = prof["settings"]["n_mode"]
         nxt = next_n(block["n"], acc, mode=mode) if block["n"] >= 1 else block["n"]
         if block["status"] == "running":
@@ -317,7 +344,8 @@ class Trainer:
                 self.store.update_profile(prof["id"], settings={block["modality"]: {"n": nxt}})
         return {"block_id": bid, "modality": block["modality"], "n": block["n"], "accuracy": acc,
                 "mean_score": mean_score, "next_n": nxt, "n_valid": len(valid),
-                "n_correct": sum(1 for t in valid if t["correct"]), "n_mode": mode}
+                "n_correct": sum(1 for t in valid if t["correct"]), "n_mode": mode,
+                "accuracy_range": accuracy_range}
 
     def block_report(self, bid: int) -> dict:
         payload = self.block_payload(bid)
@@ -336,6 +364,10 @@ class Trainer:
                     R = rot_y(-np.radians(rest)) @ R
                 t["response"]["frames"] = np.round(np.asarray(fr, float) @ R.T, 4).tolist()
         payload["summary"] = {k: block[k] for k in ("accuracy", "mean_score", "next_n", "started_at", "finished_at", "day")}
+        payload["summary"]["accuracy_range"] = (
+            score_accuracy_range(payload["trials_results"])
+            if block["config"]["settings"].get("experimental_scoring", False) else None
+        )
         return payload
 
     # -- calibration -------------------------------------------------------------------

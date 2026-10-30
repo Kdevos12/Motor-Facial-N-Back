@@ -30,7 +30,20 @@ async function route() {
   if (current && current.destroy) { try { current.destroy(); } catch (e) { console.error(e); } }
   current = null;
   const path = (location.hash || '#/home').replace(/^#\/?/, '') || 'home';
-  document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', path.startsWith(a.dataset.route)));
+  document.body.classList.toggle('in-session', path.startsWith('session/'));
+  document.querySelectorAll('#nav [data-route]').forEach((a) => {
+    const active = path.startsWith(a.dataset.route);
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  const moreButton = document.getElementById('mobile-more');
+  const moreMenu = document.getElementById('mobile-more-menu');
+  const moreActive = path.startsWith('library') || path.startsWith('settings');
+  moreButton.classList.toggle('active', moreActive);
+  moreButton.setAttribute('aria-expanded', 'false');
+  moreMenu.hidden = true;
+  if (window.AndroidApp) window.AndroidApp.setTrainingActive(path.startsWith('session/'));
   document.getElementById('app').classList.toggle('fullscreen', path.startsWith('session/'));
   if (!state.profile) { current = welcomeView(); return; }
   for (const [re, view] of routes) {
@@ -47,6 +60,20 @@ async function route() {
   }
   location.hash = '#/home';
 }
+
+document.getElementById('mobile-more').addEventListener('click', () => {
+  const button = document.getElementById('mobile-more');
+  const menu = document.getElementById('mobile-more-menu');
+  const open = button.getAttribute('aria-expanded') !== 'true';
+  button.setAttribute('aria-expanded', String(open));
+  menu.hidden = !open;
+});
+
+document.addEventListener('click', (event) => {
+  if (event.target.closest('#mobile-more, #mobile-more-menu')) return;
+  document.getElementById('mobile-more').setAttribute('aria-expanded', 'false');
+  document.getElementById('mobile-more-menu').hidden = true;
+});
 
 export function renderProfileSwitch() {
   const box = document.getElementById('profile-switch');
@@ -73,11 +100,33 @@ export function renderBanner() {
     b.hidden = false;
     b.replaceChildren(h('span', {}, 'Demo mode: no camera, a simulated user performs the moves. ',
       h('a', { href: '/' }, 'Leave demo mode')));
+  } else if (state.assets?.auto_fetch && !state.assets.ready) {
+    b.hidden = false;
+    if (state.assets.fetch_error) {
+      b.replaceChildren(h('span', {}, 'Camera files could not be downloaded: ', state.assets.fetch_error,
+        ' Close and reopen the app while online to retry.'));
+    } else {
+      b.replaceChildren(h('span', {}, 'Downloading the camera models for first use. You can browse the app or try demo mode meanwhile.'));
+    }
   } else if (state.assets && !state.assets.ready) {
     b.hidden = false;
     b.replaceChildren(h('span', {}, 'The computer-vision files are not downloaded yet. Run ', h('code', {}, 'mfnb fetch-assets'),
       ' once while online, then reload. Meanwhile you can browse the library or try the ', h('a', { href: '/?simulate#/home' }, 'demo mode'), '.'));
   } else { b.hidden = true; }
+}
+
+function watchAndroidAssets() {
+  if (!state.assets?.auto_fetch || state.assets.ready || state.assets.fetch_error) return;
+  const timer = setInterval(async () => {
+    try {
+      state.assets = await api.assets();
+      renderBanner();
+      if (state.assets.ready || state.assets.fetch_error) clearInterval(timer);
+    } catch (err) {
+      console.error('Could not check camera download status:', err);
+      clearInterval(timer);
+    }
+  }, 2500);
 }
 
 async function boot() {
@@ -89,6 +138,7 @@ async function boot() {
   if (state.profile) setSound(state.profile.settings.sound);
   renderProfileSwitch();
   renderBanner();
+  watchAndroidAssets();
   window.addEventListener('hashchange', route);
   route();
 }

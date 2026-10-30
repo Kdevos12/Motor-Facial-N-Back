@@ -7,7 +7,7 @@ import { drawFaceOverlay, drawPoseOverlay } from '../render/overlay.js';
 import { displayFrames } from '../render/retarget.js';
 import { mirrorFrames, StickFigure } from '../render/stickman.js';
 import { refreshProfile, state } from '../state.js';
-import { h, itemLabel, mount, sleep, toast } from '../ui.js';
+import { h, itemLabel, mount, scoreColor, sleep, toast } from '../ui.js';
 import { attachVideo, onCameraState, stopCamera, trackMuted } from '../vision/camera.js';
 import { SimFaceTracker, SimPoseTracker } from '../vision/sim.js';
 import { bodyCheck, FaceTracker, headOffset, headTurnSide, PoseTracker, raisedHandSide } from '../vision/trackers.js';
@@ -122,6 +122,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
   const instr = h('div', { class: 'instruction' });
   const timebar = h('div', { class: 'timebar', hidden: true }, h('div', { style: { width: '0%' } }));
   const flash = h('div', { class: 'flash' });
+  const scoreFeedback = h('div', { class: 'score-feedback', hidden: true });
   const nameTag = h('div', { class: 'item-name' });
   const counter = h('span', { class: 'muted' });
   const progress = h('div', { class: 'progress' }, h('div', { style: { width: '0%' } }));
@@ -149,7 +150,7 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     h('div', { class: 'stage-top' },
       h('strong', {}, `${modality === 'motor' ? 'Motor' : 'Facial'} · N = ${block.n}`), counter, progress,
       pauseBtn, h('button', { class: 'btn danger', onclick: () => endBlock() }, 'End block')),
-    h('div', { class: 'stage-main' }, figureCanvas, phase, instr, nameTag, timebar, selfview, legend, flash, lostBox),
+    h('div', { class: 'stage-main' }, figureCanvas, phase, instr, nameTag, timebar, selfview, legend, flash, scoreFeedback, lostBox),
     h('div', { class: 'stage-bottom small muted' }, h('span', {}, h('kbd', {}, 'Space'), ' pause · ', h('kbd', {}, 'Esc'), ' end block'))));
 
   if (modality === 'motor') {
@@ -293,12 +294,23 @@ async function run(modality, s, cfg, simulate, ctl, prof, keyRef) {
     try {
       res = await api.submit(block.block_id, trial.index, rec);
     } catch (err) { toast(err.message, 'error'); res = { valid: false }; }
-    const kind = !res.valid ? 'invalid' : res.correct ? 'good' : (res.score >= (res.threshold || 0.5) - 0.15 ? 'close' : 'bad');
-    flash.className = `flash ${kind}`;
-    if (res.valid) (res.correct ? cue.good : cue.bad)();
+    const experimental = !!s.experimental_scoring;
+    if (res.valid && experimental) {
+      flash.className = 'flash experimental';
+      flash.style.setProperty('--score-color', scoreColor(res.score, res.threshold));
+      scoreFeedback.textContent = `Match score · ${Math.round(res.score * 100)}%`;
+      scoreFeedback.style.setProperty('--score-color', scoreColor(res.score, res.threshold));
+      scoreFeedback.hidden = false;
+    } else {
+      const kind = !res.valid ? 'invalid' : res.correct ? 'good' : (res.score >= (res.threshold || 0.5) - 0.15 ? 'close' : 'bad');
+      flash.className = `flash ${kind}`;
+    }
+    if (res.valid && !experimental) (res.correct ? cue.good : cue.bad)();
     if (!res.valid) phase.textContent = res.reason || 'not tracked';
     await sleep(600);
     flash.className = 'flash';
+    flash.style.removeProperty('--score-color');
+    scoreFeedback.hidden = true;
     await sleep(Math.max(200, (s.iti_s ?? 1.5) * 1000 - 600));
   }
   if (!ending && !ctl.aborted) {
@@ -356,7 +368,7 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
       ? [['person', 'Person detected'],
         ['full', framing === 'upper' ? 'Head, shoulders, arms and hands visible' : 'Whole body visible (head to feet)'],
         ['centered', framing === 'upper' ? 'Room above your head for raised hands' : 'Inside the frame']]
-      : [['face', 'Face detected'], ['still', 'Face steady and well lit']];
+      : [['face', 'Face detected continuously']];
     const needSide = !simulate && typeof cameraMirrored(modality) !== 'boolean';
     if (needSide) items.push(['side', 'Left/right check']);
     const dots = Object.fromEntries(items.map(([k]) => [k, h('span', { class: 'dot' })]));
@@ -394,7 +406,7 @@ function cameraCheck(modality, ctl, display, overlay, simulate, prof, framing, p
           if (sample.joints) ctl.checkFig.draw(sample.joints);
         } else drawPoseOverlay(overlay, display, sample.image);
       } else {
-        st = { face: !!sample.shapes, still: !!sample.shapes };
+        st = { face: !!sample.shapes };
         if (!simulate) drawFaceOverlay(overlay, display, sample.landmarks);
       }
       if (!sideDone) {

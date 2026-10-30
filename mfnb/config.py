@@ -44,6 +44,7 @@ DEFAULT_SETTINGS: dict = {
     "response_min_extra_s": 3.0,      # ... and at least stimulus + this
     "iti_s": 1.5,                     # pause between trials
     "strictness": 1.0,                # 0.7 lenient ... 1.3 strict
+    "experimental_scoring": False,    # continuous match feedback; does not change adaptive accuracy
     "n_mode": "adaptive",             # adaptive / manual
     "motor": {"n": 1, "block_base": 20, "categories": [], "complexity": [1, 3], "variable_n": False,
               "chirality_p": 0.0, "sequence_p": 0.0, "sources": [],

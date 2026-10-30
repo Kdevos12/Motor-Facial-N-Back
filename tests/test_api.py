@@ -3,6 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from mfnb.server.app import create_app
+from mfnb.server.service import score_accuracy_range
 from mfnb.sim import synth_face_neutral, synth_face_response, synth_response
 from mfnb.storage.db import Store
 
@@ -35,6 +36,18 @@ def test_profile_settings_merge(client):
     assert p2["settings"]["flexibility"] == "low"
 
 
+def test_experimental_accuracy_range_uses_threshold_band_and_excludes_lures():
+    trials = [
+        {"valid": True, "score": 0.82, "result": {"threshold": 0.60, "lure_scores": []}},
+        {"valid": True, "score": 0.55, "result": {"threshold": 0.60, "lure_scores": []}},
+        {"valid": True, "score": 0.82, "confused_with": "box.jab",
+         "result": {"threshold": 0.60, "lure_scores": [0.86]}},
+        {"valid": False, "score": 1.0, "result": {"threshold": 0.60, "lure_scores": []}},
+    ]
+    assert score_accuracy_range(trials) == {"low": 0.3333, "high": 0.6667}
+    assert score_accuracy_range([trials[-1]]) is None
+
+
 def run_motor_block(client, pid, n, good=True, seed=0):
     block = client.post("/api/blocks", json={"profile_id": pid, "modality": "motor", "n": n, "seed": seed}).json()
     rng = np.random.default_rng(seed)
@@ -60,20 +73,24 @@ def run_motor_block(client, pid, n, good=True, seed=0):
 
 
 def test_full_motor_block_round_trip(client):
-    p = make_profile(client)
+    p = make_profile(client, experimental_scoring=True)
     block, results, summary = run_motor_block(client, p["id"], 2)
     assert len(block["trials"]) == 22 and len(results) == 20
     assert all(r["valid"] for r in results)
     assert summary["accuracy"] >= 0.85 and summary["next_n"] == 3
+    assert summary["accuracy_range"] is not None
+    assert summary["accuracy_range"]["low"] <= summary["accuracy_range"]["high"]
     assert client.get(f"/api/profiles/{p['id']}").json()["settings"]["motor"]["n"] == 3
     report = client.get(f"/api/blocks/{block['block_id']}?report=true").json()
     assert len(report["trials_results"]) == 20 and "response" in report["trials_results"][0]
+    assert report["summary"]["accuracy_range"] == summary["accuracy_range"]
 
 
 def test_bad_block_lowers_n(client):
     p = make_profile(client)
     _, results, summary = run_motor_block(client, p["id"], 2, good=False, seed=1)
     assert summary["accuracy"] < 0.6 and summary["next_n"] == 1
+    assert summary["accuracy_range"] is None
 
 
 def test_manual_mode_keeps_n(client):
